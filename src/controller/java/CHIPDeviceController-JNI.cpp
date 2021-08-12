@@ -260,7 +260,9 @@ exit:
 JNI_METHOD(void, setKeyValueStoreManager)(JNIEnv * env, jclass self, jobject manager)
 {
     StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
-    chip::DeviceLayer::PersistedStorage::KeyValueStoreMgrImpl().InitializeWithObject(manager);
+
+    // moving to platform, temp comment for compile
+    // chip::DeviceLayer::PersistedStorage::KeyValueStoreMgrImpl().InitializeWithObject(manager);
 }
 
 JNI_METHOD(void, setServiceResolver)(JNIEnv * env, jclass self, jobject resolver)

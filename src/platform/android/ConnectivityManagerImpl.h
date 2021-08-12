@@ -136,7 +136,6 @@ private:
     void _SetWiFiAPIdleTimeoutMS(uint32_t val);
 
     static BitFlags<ConnectivityFlags> mConnectivityFlag;
-    static struct GDBusWpaSupplicant mWpaSupplicant;
 #endif
 
     // ==================== ConnectivityManager Private Methods ====================
