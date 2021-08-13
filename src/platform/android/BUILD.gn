@@ -35,9 +35,14 @@ static_library("android") {
     "PlatformManagerImpl.h",
     "PosixConfig.cpp",
     "PosixConfig.h",
+    "MdnsImpl.cpp",
+    "MdnsImpl.h",
   ]
 
-  deps = [ "${chip_root}/src/setup_payload" ]
+  deps = [ 
+    "${chip_root}/src/setup_payload",
+    "${chip_root}/src/lib/mdns:platform_header",
+  ]
 
   public_deps = [
     "${chip_root}/src/platform:platform_base",

@@ -40,8 +40,8 @@ shared_library("jni") {
     "JniReferences.cpp",
     "JniReferences.h",
     "JniTypeWrappers.h",
-    "MdnsImpl.cpp",
-    "MdnsImpl.h",
+#    "MdnsImpl.cpp",
+#    "MdnsImpl.h",
     "StackLock.h",
     "gen/CHIPClusters-JNI.cpp",
   ]
