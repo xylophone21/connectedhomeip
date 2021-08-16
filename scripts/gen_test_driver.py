@@ -54,6 +54,17 @@ int main()
 
 '''
 
+TEMPLATE_SO_START =  '''
+int TestMain(bool setOutputStyle)
+{
+    int code = 0;
+
+    if(setOutputStyle) {
+      nlTestSetOutputStyle(OUTPUT_CSV);
+    }
+
+'''
+
 ### Test invokation will be added here
 
 TEMPLATE_SUFFIX = '''
@@ -65,6 +76,7 @@ def main(argv):
 
   parser.add_option('--input_file')
   parser.add_option('--output_file')
+  parser.add_option('--so_mode',action="store_true")
 
   options, _ = parser.parse_args(argv)
   
@@ -92,7 +104,10 @@ def main(argv):
          output_file.write("int %s();\n" % test)
       output_file.write("\n");
 
-      output_file.write(TEMPLATE_MAIN_START)
+      if options.so_mode:
+        output_file.write(TEMPLATE_SO_START)
+      else:
+        output_file.write(TEMPLATE_MAIN_START)
 
       for test in tests:
          output_file.write("    code = code | (%s());\n" % test)
