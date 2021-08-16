@@ -35,6 +35,14 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
+
+    sourceSets {
+        main {
+            // let gradle pack the shared library into apk
+            jniLibs.srcDirs = ['libs/jniLibs']
+        }
+    }
+
     externalNativeBuild {
         cmake {
             path file('src/main/cpp/CMakeLists.txt')
@@ -47,6 +55,10 @@ android {
 }
 
 dependencies {
+
+    if(rootProject.ext.matterBuildSrcDir == null) {
+        implementation fileTree(dir: "libs", include: ["*.jar", "*.so"])
+    }
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     implementation 'androidx.core:core-ktx:1.6.0'

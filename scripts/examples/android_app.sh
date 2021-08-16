@@ -42,3 +42,19 @@ ninja -C out/"android_$TARGET_CPU" src/setup_payload/java src/controller/java de
 
 rsync -a out/"android_$TARGET_CPU"/lib/*.jar src/android/CHIPTool/app/libs
 rsync -a out/"android_$TARGET_CPU"/lib/jni/* src/android/CHIPTool/app/libs/jniLibs
+
+
+if [ "$TARGET_CPU" = "arm" ];then
+    android_abi=armeabi-v7a
+elif [ "$TARGET_CPU" = "arm64" ];then
+    android_abi=arm64-v8a
+elif [ "$TARGET_CPU" = "x86" ];then
+    android_abi=x86_64
+elif [ "$TARGET_CPU" = "x64" ];then
+    android_abi=x86
+else
+    echo "Unsupported TARGET_CPU $TARGET_CPU"
+    exit 1
+fi
+
+rsync -a out/"android_$TARGET_CPU"/tests/*.so src/android/CHIPTest/app/libs/jniLibs/$android_abi

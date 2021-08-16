@@ -22,6 +22,13 @@ allprojects {
     }
 }
 
+ext {
+    // point to the SDK build dir ("../../../out/android_arm64" for example) based CHIPTest/
+    // to build SDK from source code and debug in Android Studio,
+    // null to use SDK prebuilt by scripts/examples/android_app.sh
+    matterBuildSrcDir = null
+}
+
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
