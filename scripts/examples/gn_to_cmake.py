@@ -714,6 +714,10 @@ def WriteTarget(out, target, project):
                 out.write(')\n')
                 system_libraries.append(system_library)
         out.write('target_link_libraries("${target}"')
+
+        if (target.cmake_type.command == "add_library" and target.cmake_type.modifier == "SHARED") or target.cmake_type.command == "add_executable":
+            out.write('\n  "-Wl,--start-group"')
+
         for library in libraries:
             out.write('\n  "')
             out.write(CMakeStringEscape(library))

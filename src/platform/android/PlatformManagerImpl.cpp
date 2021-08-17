@@ -57,7 +57,8 @@ void PlatformManagerImpl::_RunEventLoop()
 CHIP_ERROR PlatformManagerImpl::_Shutdown()
 {
     // Call up to the base class _Shutdown() to perform the bulk of the shutdown.
-    return GenericPlatformManagerImpl<ImplClass>::_Shutdown();
+    // return GenericPlatformManagerImpl<ImplClass>::_Shutdown();
+    return CHIP_ERROR_NOT_IMPLEMENTED;
 }
 
 void PlatformManagerImpl::_PostEvent(const ChipDeviceEvent * event)

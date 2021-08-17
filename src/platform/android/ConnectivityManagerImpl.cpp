@@ -228,28 +228,11 @@ ConnectivityManagerImpl ConnectivityManagerImpl::sInstance;
 
 CHIP_ERROR ConnectivityManagerImpl::_Init()
 {
-    CHIP_ERROR err = CHIP_NO_ERROR;
-
-    mWiFiStationMode                = kWiFiStationMode_Disabled;
-    mWiFiStationReconnectIntervalMS = CHIP_DEVICE_CONFIG_WIFI_STATION_RECONNECT_INTERVAL;
-
-    // Initialize the generic base classes that require it.
-#if CHIP_DEVICE_CONFIG_ENABLE_THREAD
-    GenericConnectivityManagerImpl_Thread<ConnectivityManagerImpl>::_Init();
-#endif
-
-    SuccessOrExit(err);
-
-exit:
-    return err;
+    return CHIP_ERROR_NOT_IMPLEMENTED;
 }
 
 void ConnectivityManagerImpl::_OnPlatformEvent(const ChipDeviceEvent * event)
 {
-    // Forward the event to the generic base classes as needed.
-#if CHIP_DEVICE_CONFIG_ENABLE_THREAD
-    GenericConnectivityManagerImpl_Thread<ConnectivityManagerImpl>::_OnPlatformEvent(event);
-#endif
 }
 
 #if CHIP_DEVICE_CONFIG_ENABLE_WPA
@@ -260,12 +243,12 @@ BitFlags<Internal::GenericConnectivityManagerImpl_WiFi<ConnectivityManagerImpl>:
 
 bool ConnectivityManagerImpl::_HaveIPv4InternetConnectivity()
 {
-    return mConnectivityFlag.Has(ConnectivityFlags::kHaveIPv4InternetConnectivity);
+    return false;
 }
 
 bool ConnectivityManagerImpl::_HaveIPv6InternetConnectivity()
 {
-    return mConnectivityFlag.Has(ConnectivityFlags::kHaveIPv6InternetConnectivity);
+    return false;
 }
 
 ConnectivityManager::WiFiStationMode ConnectivityManagerImpl::_GetWiFiStationMode()
