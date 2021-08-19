@@ -58,3 +58,5 @@ else
 fi
 
 rsync -a out/"android_$TARGET_CPU"/tests/*.so src/android/CHIPTest/app/libs/jniLibs/$android_abi
+rsync -a out/"android_$TARGET_CPU"/lib/*.jar src/android/CHIPTest/app/libs
+rsync -a out/"android_$TARGET_CPU"/lib/jni/* src/android/CHIPTest/app/libs/jniLibs
