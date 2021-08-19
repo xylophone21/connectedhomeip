@@ -37,7 +37,7 @@ void JniReferences::SetJavaVm(JavaVM * jvm, const char * clsType)
     JNIEnv * env = GetEnvForCurrentThread();
     // Any chip.devicecontroller.* class will work here - just need something to call getClassLoader() on.
     jclass chipClass               = env->FindClass(clsType);
-    VerifyOrReturn(chipClass == nullptr, ChipLogError(Support, "clsType can not found"));
+    VerifyOrReturn(chipClass != nullptr, ChipLogError(Support, "clsType can not found"));
 
     jclass classClass              = env->FindClass("java/lang/Class");
     jclass classLoaderClass        = env->FindClass("java/lang/ClassLoader");

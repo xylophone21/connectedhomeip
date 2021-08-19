@@ -55,7 +55,9 @@ int main()
 '''
 
 TEMPLATE_SO_START =  '''
-int TestMain(bool setOutputStyle)
+extern "C" int TestMain(int setOutputStyle);
+
+int TestMain(int setOutputStyle)
 {
     int code = 0;
 

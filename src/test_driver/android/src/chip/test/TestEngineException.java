@@ -17,7 +17,7 @@
  */
 package chip.test;
 
-/** Exception thrown from CHIPDeviceController. */
+/** Exception thrown from TestEngine. */
 public class TestEngineException extends Exception {
   private static final long serialVersionUID = 1L;
 

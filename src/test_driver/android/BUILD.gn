@@ -17,6 +17,7 @@ import("//build_overrides/chip.gni")
 
 import("${build_root}/config/android_abi.gni")
 import("${chip_root}/build/chip/java/rules.gni")
+import("//build_overrides/nlunit_test.gni")
 
 shared_library("jni") {
   output_name = "libCHIPTest"
@@ -28,6 +29,7 @@ shared_library("jni") {
   deps = [
     "${chip_root}/src/lib/core:core",
     "${chip_root}/src/lib/support:support",
+    "${nlunit_test_root}:nlunit-test",
   ]
 
   public_configs = [ 
@@ -46,6 +48,7 @@ android_library("java") {
 
   sources = [
     "src/chip/test/TestEngine.java",
+    "src/chip/test/TestEngineException.java",
   ]
 
   javac_flags = [ "-Xlint:deprecation" ]

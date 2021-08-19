@@ -24,6 +24,12 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+
+        debug {
+            packagingOptions {
+                doNotStrip '**/*.so'
+            }
+        }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -66,7 +72,7 @@ android {
 dependencies {
 
     if(rootProject.ext.matterBuildSrcDir == null) {
-        implementation fileTree(dir: "libs", include: ["*.jar", "*.so"])
+        implementation fileTree(dir: "libs", include: ["*.jar"])
     }
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"

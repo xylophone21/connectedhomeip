@@ -23,13 +23,15 @@
  */
 
 #include <jni.h>
+#include <dlfcn.h>
 
 #include <core/CHIPError.h>
 #include <support/CodeUtils.h>
-
 #include <support/JniReferences.h>
 #include <support/CHIPJNIError.h>
 #include <support/StackLock.h>
+
+#include <nlunit-test.h>
 
 using namespace chip;
 
@@ -58,7 +60,7 @@ jint JNI_OnLoad(JavaVM * jvm, void * reserved)
     env = JniReferences::GetInstance().GetEnvForCurrentThread();
     VerifyOrExit(env != NULL, err = CHIP_JNI_ERROR_NO_ENV);
 
-    ChipLogProgress(Controller, "Loading Java class references.");
+    ChipLogProgress(Test, "Loading Java class references.");
 
     // Get various class references need by the API.
     err = JniReferences::GetInstance().GetClassRef(env, "chip/test/TestEngine", sTestEngineCls);
@@ -67,7 +69,7 @@ jint JNI_OnLoad(JavaVM * jvm, void * reserved)
     err = JniReferences::GetInstance().GetClassRef(env, "chip/test/TestEngineException",
                                                    sTestEngineExceptionCls);
     SuccessOrExit(err);
-    ChipLogProgress(Controller, "Java class references loaded.");
+    ChipLogProgress(Test, "Java class references loaded.");
 
 exit:
     if (err != CHIP_NO_ERROR)
@@ -83,40 +85,39 @@ exit:
 void JNI_OnUnload(JavaVM * jvm, void * reserved)
 {
     StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
-    ChipLogProgress(Controller, "JNI_OnUnload() called");
+    ChipLogProgress(Test, "JNI_OnUnload() called");
 
     sJVM = NULL;
 }
 
-
-// void ReportError(JNIEnv * env, CHIP_ERROR cbErr, const char * functName)
-// {
-//     if (cbErr == CHIP_JNI_ERROR_EXCEPTION_THROWN)
-//     {
-//         ChipLogError(Controller, "Java exception thrown in %s", functName);
-//         env->ExceptionDescribe();
-//     }
-//     else
-//     {
-//         const char * errStr;
-//         switch (cbErr.AsInteger())
-//         {
-//         case CHIP_JNI_ERROR_TYPE_NOT_FOUND.AsInteger():
-//             errStr = "JNI type not found";
-//             break;
-//         case CHIP_JNI_ERROR_METHOD_NOT_FOUND.AsInteger():
-//             errStr = "JNI method not found";
-//             break;
-//         case CHIP_JNI_ERROR_FIELD_NOT_FOUND.AsInteger():
-//             errStr = "JNI field not found";
-//             break;
-//         default:
-//             errStr = ErrorStr(cbErr);
-//             break;
-//         }
-//         ChipLogError(Controller, "Error in %s : %s", functName, errStr);
-//     }
-// }
+void ReportError(JNIEnv * env, CHIP_ERROR cbErr, const char * functName)
+{
+    if (cbErr == CHIP_JNI_ERROR_EXCEPTION_THROWN)
+    {
+        ChipLogError(Test, "Java exception thrown in %s", functName);
+        env->ExceptionDescribe();
+    }
+    else
+    {
+        const char * errStr;
+        switch (cbErr.AsInteger())
+        {
+        case CHIP_JNI_ERROR_TYPE_NOT_FOUND.AsInteger():
+            errStr = "JNI type not found";
+            break;
+        case CHIP_JNI_ERROR_METHOD_NOT_FOUND.AsInteger():
+            errStr = "JNI method not found";
+            break;
+        case CHIP_JNI_ERROR_FIELD_NOT_FOUND.AsInteger():
+            errStr = "JNI field not found";
+            break;
+        default:
+            errStr = ErrorStr(cbErr);
+            break;
+        }
+        ChipLogError(Test, "Error in %s : %s", functName, errStr);
+    }
+}
 
 void ThrowError(JNIEnv * env, CHIP_ERROR errToThrow)
 {
@@ -144,16 +145,16 @@ CHIP_ERROR N2J_Error(JNIEnv * env, CHIP_ERROR inErr, jthrowable & outEx)
     switch (inErr.AsInteger())
     {
     case CHIP_JNI_ERROR_TYPE_NOT_FOUND.AsInteger():
-        errStr = "CHIP Device Controller Error: JNI type not found";
+        errStr = "CHIP Device Test Error: JNI type not found";
         break;
     case CHIP_JNI_ERROR_METHOD_NOT_FOUND.AsInteger():
-        errStr = "CHIP Device Controller Error: JNI method not found";
+        errStr = "CHIP Device Test Error: JNI method not found";
         break;
     case CHIP_JNI_ERROR_FIELD_NOT_FOUND.AsInteger():
-        errStr = "CHIP Device Controller Error: JNI field not found";
+        errStr = "CHIP Device Test Error: JNI field not found";
         break;
     case CHIP_JNI_ERROR_DEVICE_NOT_FOUND.AsInteger():
-        errStr = "CHIP Device Controller Error: Device not found";
+        errStr = "CHIP Device Test Error: Device not found";
         break;
     default:
         errStr = ErrorStr(inErr);
@@ -170,9 +171,135 @@ exit:
     return err;
 }
 
+static void onLog(const char* fmt, ...)
+{
+    CHIP_ERROR err = CHIP_NO_ERROR;
+    jmethodID method;
+    jstring strObj = NULL;
+    char str[512] = {0};
+    va_list args;
+
+    ChipLogProgress(Test, "Received onLog");
+    JNIEnv * env = JniReferences::GetInstance().GetEnvForCurrentThread();
+    VerifyOrExit(env != NULL, err = CHIP_JNI_ERROR_NO_ENV);
+
+    method = env->GetStaticMethodID(sTestEngineCls, "onTestLog", "(Ljava/lang/String;)V");
+    VerifyOrExit(method != NULL, err = CHIP_JNI_ERROR_NO_ENV);
+
+    va_start (args, fmt);
+    vsnprintf(str,sizeof(str),fmt, args);
+    va_end(args);
+    strObj = env->NewStringUTF(str);
+
+    ChipLogProgress(Test, "Calling Java onTestLog");
+
+    env->ExceptionClear();
+    {
+        StackUnlockGuard unlockGuard(JniReferences::GetInstance().GetStackLock());
+        env->CallStaticVoidMethod(sTestEngineCls, method, strObj);
+    }
+    VerifyOrExit(!env->ExceptionCheck(), err = CHIP_JNI_ERROR_EXCEPTION_THROWN);
+
+exit:
+    env->ExceptionClear();
+    env->DeleteLocalRef(strObj);
+
+    if (err != CHIP_NO_ERROR)
+    {
+        ReportError(env, err, __FUNCTION__);
+    }
+}
+
+static void jni_log_name(struct _nlTestSuite* inSuite)
+{
+    onLog("[ %s ]\n", inSuite->name);
+}
+
+static void jni_log_initialize(struct _nlTestSuite * inSuite, int inResult, int inWidth)
+{
+    onLog("[ %s : %-*s ] : %s\n", inSuite->name, inWidth, "Initialize", inResult==FAILURE ? "FAILED" : "PASSED" );
+}
+static void jni_log_terminate(struct _nlTestSuite * inSuite, int inResult, int inWidth)
+{
+    onLog("[ %s : %-*s ] : %s\n", inSuite->name, inWidth,"Terminate", inResult==FAILURE ? "FAILED" : "PASSED" );
+}
+
+static void jni_log_setup(struct _nlTestSuite* inSuite, int inResult, int inWidth)
+{
+    onLog("[ %s : %-*s ] : %s\n", inSuite->name, inWidth, "Setup", inResult == FAILURE ? "FAILED" : "PASSED");
+}
+
+static void jni_log_test(struct _nlTestSuite *inSuite, int inWidth, int inIndex)
+{
+    onLog("[ %s : %-*s ] : %s\n", inSuite->name, inWidth, inSuite->tests[inIndex].name, inSuite->flagError ? "FAILED" : "PASSED");
+}
+
+static void jni_log_teardown(struct _nlTestSuite* inSuite, int inResult, int inWidth)
+{
+    onLog("[ %s : %-*s ] : %s\n", inSuite->name, inWidth, "TearDown", inResult == FAILURE ? "FAILED" : "PASSED");
+}
+
+static void jni_log_statTest(struct _nlTestSuite* inSuite)
+{
+    onLog("Failed Tests:   %d / %d\n", inSuite->failedTests, inSuite->runTests);
+}
+
+static void jni_log_statAssert(struct _nlTestSuite* inSuite)
+{
+    onLog("Failed Asserts: %d / %d\n", inSuite->failedAssertions, inSuite->performedAssertions);
+}
+
+static nl_test_output_logger_t jni_test_logger = {
+    jni_log_name,
+    jni_log_initialize,
+    jni_log_terminate,
+    jni_log_setup,
+    jni_log_test,
+    jni_log_teardown,
+    jni_log_statTest,
+    jni_log_statAssert,
+};
+
 extern "C"
 JNIEXPORT jint JNICALL
-Java_chip_test_TestEngine_nativeRunTest(JNIEnv *env, jclass clazz, jstring testFile) {
-    // TODO: implement runTest()
-    return 0;
+Java_chip_test_TestEngine_nativeRunTest(JNIEnv *env, jclass clazz, jstring testFile) 
+{    
+    CHIP_ERROR err = CHIP_NO_ERROR;
+    void *handle = NULL;
+    int (*testMain)(int);
+    void (*nlTestSetLogger)(nlTestOutputLogger*);
+
+    const char * testFileStr = env->GetStringUTFChars(testFile, 0);
+    VerifyOrExit(testFileStr != NULL, err = CHIP_JNI_ERROR_NULL_OBJECT);
+
+    handle = dlopen(testFileStr, RTLD_LAZY);
+    VerifyOrExit(handle, err = CHIP_ERROR_OPEN_FAILED);
+
+    *(void**)(&nlTestSetLogger) = dlsym(handle, "nlTestSetLogger");
+    VerifyOrExit(nlTestSetLogger, err = CHIP_ERROR_READ_FAILED);
+
+    *(void**)(&testMain) = dlsym(handle, "TestMain");
+    VerifyOrExit(testMain, err = CHIP_ERROR_READ_FAILED);
+
+    nlTestSetLogger(&jni_test_logger);
+    testMain(0);
+
+exit:
+    if (err != CHIP_NO_ERROR)
+    {
+        ReportError(env, err, __FUNCTION__);
+    }
+
+    if(testFileStr) {
+        env->ReleaseStringUTFChars(testFile, testFileStr);
+    }
+
+    if(handle) {
+        dlclose(handle);
+    }
+
+    return (jint)err.AsInteger();
 }
+
+
+
