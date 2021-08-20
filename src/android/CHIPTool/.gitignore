@@ -18,3 +18,4 @@
 # Shared libs & JAR libs (those libs are copied into source tree for easy Android build).
 *.so
 *.jar
+*.map
