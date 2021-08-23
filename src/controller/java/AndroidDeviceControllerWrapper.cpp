@@ -36,7 +36,7 @@ using namespace chip;
 using namespace chip::Controller;
 using namespace TLV;
 
-extern chip::Ble::BleLayer * GetJNIBleLayer();
+// extern chip::Ble::BleLayer * GetJNIBleLayer();
 
 constexpr const char kOperationalCredentialsIssuerKeypairStorage[]   = "AndroidDeviceControllerKey";
 constexpr const char kOperationalCredentialsRootCertificateStorage[] = "AndroidCARootCert";
@@ -203,7 +203,7 @@ AndroidDeviceControllerWrapper * AndroidDeviceControllerWrapper::AllocateNew(Jav
     initParams.operationalCredentialsDelegate = wrapper.get();
     initParams.systemLayer                    = systemLayer;
     initParams.inetLayer                      = inetLayer;
-    initParams.bleLayer                       = GetJNIBleLayer();
+    // initParams.bleLayer                       = GetJNIBleLayer();
 
     *errInfoOnFailure = wrapper->OpCredsIssuer().Initialize(*initParams.storageDelegate);
     if (*errInfoOnFailure != CHIP_NO_ERROR)

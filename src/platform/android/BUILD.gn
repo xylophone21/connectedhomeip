@@ -17,11 +17,16 @@ import("//build_overrides/chip.gni")
 
 import("${chip_root}/src/platform/device.gni")
 
-assert(chip_device_platform == "android")
+import("${build_root}/config/android_abi.gni")
+import("${chip_root}/build/chip/java/rules.gni")
 
+assert(chip_device_platform == "android")
 
 static_library("android") {
   sources = [
+    "BLEManagerImpl.cpp",
+    "BLEManagerImpl.h",
+    "BlePlatformConfig.h",
     "CHIPDevicePlatformEvent.h",
     "ConfigurationManagerImpl.cpp",
     "ConfigurationManagerImpl.h",
@@ -49,4 +54,39 @@ static_library("android") {
   ]
 
   public_configs = []
+}
+
+shared_library("jni") {
+  output_name = "libAndroidPlatform"
+
+  sources = [
+    "AndroidChipPlatform-JNI.cpp",
+  ]
+
+  public_deps = [
+    ":android",
+    "${chip_root}/src/platform",
+  ]
+  
+  output_dir = "${root_out_dir}/lib/jni/${android_abi}"
+}
+
+android_library("java") {
+  output_name = "AndroidPlatform.jar"
+
+  data_deps = [
+    ":jni",
+    "${chip_root}/build/chip/java:shared_cpplib",
+  ]
+
+  sources = [
+    "java/chip/platform/AndroidChipPlatform.java",
+    "java/chip/platform/AndroidChipPlatformException.java",
+    "java/chip/platform/BLEManager.java",
+  ]
+
+  javac_flags = [ "-Xlint:deprecation" ]
+
+  # TODO: add classpath support (we likely need to add something like
+  #  ..../platforms/android-21/android.jar to access BLE items)
 }

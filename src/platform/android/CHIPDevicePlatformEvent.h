@@ -43,18 +43,6 @@ enum PublicPlatformSpecificEventTypes
  */
 enum InternalPlatformSpecificEventTypes
 {
-    kPlatformAndroidEvent = kRange_InternalPlatformSpecific,
-    kPlatformAndroidBLECentralConnected,
-    kPlatformAndroidBLECentralConnectFailed,
-    kPlatformAndroidBLEWriteComplete,
-    kPlatformAndroidBLESubscribeOpComplete,
-    kPlatformAndroidBLEIndicationReceived,
-    kPlatformAndroidBLEC1WriteEvent,
-    kPlatformAndroidBLEOutOfBuffersEvent,
-    kPlatformAndroidBLEPeripheralRegisterAppComplete,
-    kPlatformAndroidBLEPeripheralAdvConfiguredComplete,
-    kPlatformAndroidBLEPeripheralAdvStartComplete,
-    kPlatformAndroidBLEPeripheralAdvStopComplete
 };
 
 } // namespace DeviceEventType
@@ -64,51 +52,6 @@ enum InternalPlatformSpecificEventTypes
  */
 struct ChipDevicePlatformEvent
 {
-    union
-    {
-        struct
-        {
-            BLE_CONNECTION_OBJECT mConnection;
-        } BLECentralConnected;
-        struct
-        {
-            CHIP_ERROR mError;
-        } BLECentralConnectFailed;
-        struct
-        {
-            BLE_CONNECTION_OBJECT mConnection;
-        } BLEWriteComplete;
-        struct
-        {
-            BLE_CONNECTION_OBJECT mConnection;
-            bool mIsSubscribed;
-        } BLESubscribeOpComplete;
-        struct
-        {
-            BLE_CONNECTION_OBJECT mConnection;
-            chip::System::PacketBuffer * mData;
-        } BLEIndicationReceived;
-        struct
-        {
-            bool mIsSuccess;
-            void * mpAppstate;
-        } BLEPeripheralRegisterAppComplete;
-        struct
-        {
-            bool mIsSuccess;
-            void * mpAppstate;
-        } BLEPeripheralAdvConfiguredComplete;
-        struct
-        {
-            bool mIsSuccess;
-            void * mpAppstate;
-        } BLEPeripheralAdvStartComplete;
-        struct
-        {
-            bool mIsSuccess;
-            void * mpAppstate;
-        } BLEPeripheralAdvStopComplete;
-    };
 };
 
 } // namespace DeviceLayer

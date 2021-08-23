@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2020-2021 Project CHIP Authors
+ *   Copyright (c) 2020 Project CHIP Authors
  *   All rights reserved.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,15 +15,18 @@
  *   limitations under the License.
  *
  */
-#pragma once
+package chip.platform;
 
-#define _CHIP_JNI_ERROR(e) CHIP_APPLICATION_ERROR((e))
+/** Exception thrown from AndroidChipPlatform. */
+public class AndroidChipPlatformException extends Exception {
+  private static final long serialVersionUID = 1L;
 
-#define CHIP_JNI_ERROR_EXCEPTION_THROWN _CHIP_JNI_ERROR(0)
-#define CHIP_JNI_ERROR_TYPE_NOT_FOUND _CHIP_JNI_ERROR(1)
-#define CHIP_JNI_ERROR_METHOD_NOT_FOUND _CHIP_JNI_ERROR(2)
-#define CHIP_JNI_ERROR_FIELD_NOT_FOUND _CHIP_JNI_ERROR(3)
-#define CHIP_JNI_ERROR_NO_ENV _CHIP_JNI_ERROR(4)
-#define CHIP_JNI_ERROR_NULL_OBJECT _CHIP_JNI_ERROR(5)
-#define CHIP_JNI_ERROR_DEVICE_NOT_FOUND _CHIP_JNI_ERROR(6)
-#define CHIP_JNI_ERROR_JAVA_ERROR _CHIP_JNI_ERROR(7)
+  public int errorCode;
+
+  public AndroidChipPlatformException() {}
+
+  public AndroidChipPlatformException(int errorCode, String message) {
+    super(message != null ? message : String.format("Error Code %d", errorCode));
+    this.errorCode = errorCode;
+  }
+}

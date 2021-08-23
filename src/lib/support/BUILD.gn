@@ -117,6 +117,7 @@ static_library("support") {
       "JniReferences.h",
       "StackLock.h",
       "CHIPJNIError.h",
+      "JniTypeWrappers.h",
     ]
   }
 

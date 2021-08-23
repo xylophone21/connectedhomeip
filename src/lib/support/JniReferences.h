@@ -74,6 +74,8 @@ public:
 
     CHIP_ERROR N2J_ByteArray(JNIEnv * env, const uint8_t * inArray, jsize inArrayLen, jbyteArray & outArray);
 
+    void ReportError(JNIEnv * env, CHIP_ERROR cbErr, const char * functName);
+
 private:
     JniReferences() {}
 

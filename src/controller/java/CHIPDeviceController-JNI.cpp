@@ -21,10 +21,9 @@
  *      Implementation of JNI bridge for CHIP Device Controller for Android apps
  *
  */
-
-#include "AndroidBleApplicationDelegate.h"
-#include "AndroidBleConnectionDelegate.h"
-#include "AndroidBlePlatformDelegate.h"
+// #include "AndroidBleApplicationDelegate.h"
+// #include "AndroidBleConnectionDelegate.h"
+// #include "AndroidBlePlatformDelegate.h"
 #include "AndroidCallbacks.h"
 #include "AndroidDeviceControllerWrapper.h"
 #include "CHIPJNIError.h"
@@ -71,16 +70,16 @@ using namespace chip::Thread;
 #define CDC_JNI_CALLBACK_LOCAL_REF_COUNT 256
 
 static void GetCHIPDevice(JNIEnv * env, long wrapperHandle, uint64_t deviceId, Device ** device);
-static void HandleNotifyChipConnectionClosed(BLE_CONNECTION_OBJECT connObj);
-static bool HandleSendCharacteristic(BLE_CONNECTION_OBJECT connObj, const uint8_t * svcId, const uint8_t * charId,
-                                     const uint8_t * characteristicData, uint32_t characteristicDataLen);
-static bool HandleSubscribeCharacteristic(BLE_CONNECTION_OBJECT connObj, const uint8_t * svcId, const uint8_t * charId);
-static bool HandleUnsubscribeCharacteristic(BLE_CONNECTION_OBJECT connObj, const uint8_t * svcId, const uint8_t * charId);
-static bool HandleCloseConnection(BLE_CONNECTION_OBJECT connObj);
-static uint16_t HandleGetMTU(BLE_CONNECTION_OBJECT connObj);
-static void HandleNewConnection(void * appState, const uint16_t discriminator);
+// static void HandleNotifyChipConnectionClosed(BLE_CONNECTION_OBJECT connObj);
+// static bool HandleSendCharacteristic(BLE_CONNECTION_OBJECT connObj, const uint8_t * svcId, const uint8_t * charId,
+                                     // const uint8_t * characteristicData, uint32_t characteristicDataLen);
+// static bool HandleSubscribeCharacteristic(BLE_CONNECTION_OBJECT connObj, const uint8_t * svcId, const uint8_t * charId);
+// static bool HandleUnsubscribeCharacteristic(BLE_CONNECTION_OBJECT connObj, const uint8_t * svcId, const uint8_t * charId);
+// static bool HandleCloseConnection(BLE_CONNECTION_OBJECT connObj);
+// static uint16_t HandleGetMTU(BLE_CONNECTION_OBJECT connObj);
+// static void HandleNewConnection(void * appState, const uint16_t discriminator);
 static void ThrowError(JNIEnv * env, CHIP_ERROR errToThrow);
-static void ReportError(JNIEnv * env, CHIP_ERROR cbErr, const char * cbName);
+// static void ReportError(JNIEnv * env, CHIP_ERROR cbErr, const char * cbName);
 static void * IOThreadMain(void * arg);
 static CHIP_ERROR N2J_Error(JNIEnv * env, CHIP_ERROR inErr, jthrowable & outEx);
 
@@ -94,12 +93,12 @@ JavaVM * sJVM;
 System::Layer sSystemLayer;
 Inet::InetLayer sInetLayer;
 
-#if CONFIG_NETWORK_LAYER_BLE
-Ble::BleLayer sBleLayer;
-AndroidBleApplicationDelegate sBleApplicationDelegate;
-AndroidBlePlatformDelegate sBlePlatformDelegate;
-AndroidBleConnectionDelegate sBleConnectionDelegate;
-#endif
+// #if CONFIG_NETWORK_LAYER_BLE
+// Ble::BleLayer sBleLayer;
+// AndroidBleApplicationDelegate sBleApplicationDelegate;
+// AndroidBlePlatformDelegate sBlePlatformDelegate;
+// AndroidBleConnectionDelegate sBleConnectionDelegate;
+// #endif
 
 pthread_t sIOThread = PTHREAD_NULL;
 bool sShutdown      = false;
@@ -115,14 +114,14 @@ jclass sChipDeviceControllerExceptionCls = NULL;
 chip::NodeId kLocalDeviceId  = chip::kTestControllerNodeId;
 chip::NodeId kRemoteDeviceId = chip::kTestDeviceNodeId;
 
-#if CONFIG_NETWORK_LAYER_BLE
+// #if CONFIG_NETWORK_LAYER_BLE
 
-chip::Ble::BleLayer * GetJNIBleLayer()
-{
-    return &sBleLayer;
-}
+// chip::Ble::BleLayer * GetJNIBleLayer()
+// {
+//     return &sBleLayer;
+// }
 
-#endif
+// #endif
 
 jint JNI_OnLoad(JavaVM * jvm, void * reserved)
 {
@@ -160,28 +159,28 @@ jint JNI_OnLoad(JavaVM * jvm, void * reserved)
     err = sInetLayer.Init(sSystemLayer, NULL);
     SuccessOrExit(err);
     ChipLogProgress(Controller, "Inet layer initialized.");
+    
+// #if CONFIG_NETWORK_LAYER_BLE
+//     ChipLogProgress(Controller, "BLE Layer being configured.");
 
-#if CONFIG_NETWORK_LAYER_BLE
-    ChipLogProgress(Controller, "BLE Layer being configured.");
+//     // Initialize the BleApplicationDelegate
+//     sBleApplicationDelegate.SetNotifyChipConnectionClosedCallback(HandleNotifyChipConnectionClosed);
+//     // Initialize the BlePlatformDelegate
+//     sBlePlatformDelegate.SetSendWriteRequestCallback(HandleSendCharacteristic);
+//     sBlePlatformDelegate.SetSubscribeCharacteristicCallback(HandleSubscribeCharacteristic);
+//     sBlePlatformDelegate.SetUnsubscribeCharacteristicCallback(HandleUnsubscribeCharacteristic);
+//     sBlePlatformDelegate.SetCloseConnectionCallback(HandleCloseConnection);
+//     sBlePlatformDelegate.SetGetMTUCallback(HandleGetMTU);
+//     // Initialize the BleConnectionDelegate
+//     sBleConnectionDelegate.SetNewConnectionCallback(HandleNewConnection);
 
-    // Initialize the BleApplicationDelegate
-    sBleApplicationDelegate.SetNotifyChipConnectionClosedCallback(HandleNotifyChipConnectionClosed);
-    // Initialize the BlePlatformDelegate
-    sBlePlatformDelegate.SetSendWriteRequestCallback(HandleSendCharacteristic);
-    sBlePlatformDelegate.SetSubscribeCharacteristicCallback(HandleSubscribeCharacteristic);
-    sBlePlatformDelegate.SetUnsubscribeCharacteristicCallback(HandleUnsubscribeCharacteristic);
-    sBlePlatformDelegate.SetCloseConnectionCallback(HandleCloseConnection);
-    sBlePlatformDelegate.SetGetMTUCallback(HandleGetMTU);
-    // Initialize the BleConnectionDelegate
-    sBleConnectionDelegate.SetNewConnectionCallback(HandleNewConnection);
+//     ChipLogProgress(Controller, "Asking for BLE Layer initialization.");
+//     // Initialize the BleLayer object.
+//     err = sBleLayer.Init(&sBlePlatformDelegate, &sBleConnectionDelegate, &sBleApplicationDelegate, &sSystemLayer);
+//     SuccessOrExit(err);
 
-    ChipLogProgress(Controller, "Asking for BLE Layer initialization.");
-    // Initialize the BleLayer object.
-    err = sBleLayer.Init(&sBlePlatformDelegate, &sBleConnectionDelegate, &sBleApplicationDelegate, &sSystemLayer);
-    SuccessOrExit(err);
-
-    ChipLogProgress(Controller, "BLE was initialized.");
-#endif
+//     ChipLogProgress(Controller, "BLE was initialized.");
+// #endif
 
     // Create and start the IO thread.
     sShutdown  = false;
@@ -214,9 +213,9 @@ void JNI_OnUnload(JavaVM * jvm, void * reserved)
         pthread_join(sIOThread, NULL);
     }
 
-#if CONFIG_NETWORK_LAYER_BLE
-    sBleLayer.Shutdown();
-#endif
+// #if CONFIG_NETWORK_LAYER_BLE
+//     sBleLayer.Shutdown();
+// #endif
 
     sInetLayer.Shutdown();
     sSystemLayer.Shutdown();
@@ -290,11 +289,11 @@ JNI_METHOD(void, pairDevice)
 
     ChipLogProgress(Controller, "pairDevice() called with device ID, connection object, and pincode");
 
-    sBleLayer.mAppState         = (void *) self;
+    // sBleLayer.mAppState         = (void *) self;
     RendezvousParameters params = RendezvousParameters()
                                       .SetSetupPINCode(pinCode)
                                       .SetConnectionObject(reinterpret_cast<BLE_CONNECTION_OBJECT>(connObj))
-                                      .SetBleLayer(&sBleLayer)
+                                      // .SetBleLayer(&sBleLayer)
                                       .SetPeerAddress(Transport::PeerAddress::BLE());
     if (csrNonce != nullptr)
     {
@@ -678,7 +677,7 @@ JNI_ANDROID_CHIP_STACK_METHOD(void, handleIndicationReceived)
 (JNIEnv * env, jobject self, jint conn, jbyteArray svcId, jbyteArray charId, jbyteArray value)
 {
     StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
-    BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
+    // BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
     const auto valueBegin               = env->GetByteArrayElements(value, nullptr);
     const auto valueLength              = env->GetArrayLength(value);
 
@@ -694,7 +693,7 @@ JNI_ANDROID_CHIP_STACK_METHOD(void, handleIndicationReceived)
     buffer = System::PacketBufferHandle::NewWithData(valueBegin, valueLength);
     VerifyOrExit(!buffer.IsNull(), ChipLogError(Controller, "Failed to allocate packet buffer"));
 
-    sBleLayer.HandleIndicationReceived(connObj, &svcUUID, &charUUID, std::move(buffer));
+    // sBleLayer.HandleIndicationReceived(connObj, &svcUUID, &charUUID, std::move(buffer));
 exit:
     env->ReleaseByteArrayElements(value, valueBegin, 0);
 }
@@ -703,7 +702,7 @@ JNI_ANDROID_CHIP_STACK_METHOD(void, handleWriteConfirmation)
 (JNIEnv * env, jobject self, jint conn, jbyteArray svcId, jbyteArray charId)
 {
     StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
-    BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
+    // BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
 
     chip::Ble::ChipBleUUID svcUUID;
     chip::Ble::ChipBleUUID charUUID;
@@ -712,14 +711,14 @@ JNI_ANDROID_CHIP_STACK_METHOD(void, handleWriteConfirmation)
     VerifyOrReturn(JavaBytesToUUID(env, charId, charUUID),
                    ChipLogError(Controller, "handleWriteConfirmation() called with invalid characteristic ID"));
 
-    sBleLayer.HandleWriteConfirmation(connObj, &svcUUID, &charUUID);
+    // sBleLayer.HandleWriteConfirmation(connObj, &svcUUID, &charUUID);
 }
 
 JNI_ANDROID_CHIP_STACK_METHOD(void, handleSubscribeComplete)
 (JNIEnv * env, jobject self, jint conn, jbyteArray svcId, jbyteArray charId)
 {
     StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
-    BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
+    // BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
 
     chip::Ble::ChipBleUUID svcUUID;
     chip::Ble::ChipBleUUID charUUID;
@@ -728,14 +727,14 @@ JNI_ANDROID_CHIP_STACK_METHOD(void, handleSubscribeComplete)
     VerifyOrReturn(JavaBytesToUUID(env, charId, charUUID),
                    ChipLogError(Controller, "handleSubscribeComplete() called with invalid characteristic ID"));
 
-    sBleLayer.HandleSubscribeComplete(connObj, &svcUUID, &charUUID);
+    // sBleLayer.HandleSubscribeComplete(connObj, &svcUUID, &charUUID);
 }
 
 JNI_ANDROID_CHIP_STACK_METHOD(void, handleUnsubscribeComplete)
 (JNIEnv * env, jobject self, jint conn, jbyteArray svcId, jbyteArray charId)
 {
     StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
-    BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
+    // BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
 
     chip::Ble::ChipBleUUID svcUUID;
     chip::Ble::ChipBleUUID charUUID;
@@ -744,15 +743,15 @@ JNI_ANDROID_CHIP_STACK_METHOD(void, handleUnsubscribeComplete)
     VerifyOrReturn(JavaBytesToUUID(env, charId, charUUID),
                    ChipLogError(Controller, "handleUnsubscribeComplete() called with invalid characteristic ID"));
 
-    sBleLayer.HandleUnsubscribeComplete(connObj, &svcUUID, &charUUID);
+    // sBleLayer.HandleUnsubscribeComplete(connObj, &svcUUID, &charUUID);
 }
 
 JNI_ANDROID_CHIP_STACK_METHOD(void, handleConnectionError)(JNIEnv * env, jobject self, jint conn)
 {
     StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
-    BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
+    // BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
 
-    sBleLayer.HandleConnectionError(connObj, BLE_ERROR_APP_CLOSED_CONNECTION);
+    // sBleLayer.HandleConnectionError(connObj, BLE_ERROR_APP_CLOSED_CONNECTION);
 }
 
 JNI_METHOD(void, deleteDeviceController)(JNIEnv * env, jobject self, jlong handle)
@@ -768,6 +767,7 @@ JNI_METHOD(void, deleteDeviceController)(JNIEnv * env, jobject self, jlong handl
     }
 }
 
+#if 0
 void HandleNotifyChipConnectionClosed(BLE_CONNECTION_OBJECT connObj)
 {
     CHIP_ERROR err = CHIP_NO_ERROR;
@@ -1037,6 +1037,7 @@ exit:
     }
     env->ExceptionClear();
 }
+#endif
 
 void * IOThreadMain(void * arg)
 {
@@ -1093,34 +1094,34 @@ void * IOThreadMain(void * arg)
     return NULL;
 }
 
-void ReportError(JNIEnv * env, CHIP_ERROR cbErr, const char * functName)
-{
-    if (cbErr == CHIP_JNI_ERROR_EXCEPTION_THROWN)
-    {
-        ChipLogError(Controller, "Java exception thrown in %s", functName);
-        env->ExceptionDescribe();
-    }
-    else
-    {
-        const char * errStr;
-        switch (cbErr.AsInteger())
-        {
-        case CHIP_JNI_ERROR_TYPE_NOT_FOUND.AsInteger():
-            errStr = "JNI type not found";
-            break;
-        case CHIP_JNI_ERROR_METHOD_NOT_FOUND.AsInteger():
-            errStr = "JNI method not found";
-            break;
-        case CHIP_JNI_ERROR_FIELD_NOT_FOUND.AsInteger():
-            errStr = "JNI field not found";
-            break;
-        default:
-            errStr = ErrorStr(cbErr);
-            break;
-        }
-        ChipLogError(Controller, "Error in %s : %s", functName, errStr);
-    }
-}
+// void ReportError(JNIEnv * env, CHIP_ERROR cbErr, const char * functName)
+// {
+//     if (cbErr == CHIP_JNI_ERROR_EXCEPTION_THROWN)
+//     {
+//         ChipLogError(Controller, "Java exception thrown in %s", functName);
+//         env->ExceptionDescribe();
+//     }
+//     else
+//     {
+//         const char * errStr;
+//         switch (cbErr.AsInteger())
+//         {
+//         case CHIP_JNI_ERROR_TYPE_NOT_FOUND.AsInteger():
+//             errStr = "JNI type not found";
+//             break;
+//         case CHIP_JNI_ERROR_METHOD_NOT_FOUND.AsInteger():
+//             errStr = "JNI method not found";
+//             break;
+//         case CHIP_JNI_ERROR_FIELD_NOT_FOUND.AsInteger():
+//             errStr = "JNI field not found";
+//             break;
+//         default:
+//             errStr = ErrorStr(cbErr);
+//             break;
+//         }
+//         ChipLogError(Controller, "Error in %s : %s", functName, errStr);
+//     }
+// }
 
 void ThrowError(JNIEnv * env, CHIP_ERROR errToThrow)
 {

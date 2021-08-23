@@ -102,7 +102,7 @@ if (chip_device_platform != "none") {
       "CHIP_ENABLE_ROTATING_DEVICE_ID=${chip_enable_rotating_device_id}",
     ]
 
-    if (chip_device_platform == "linux" || chip_device_platform == "darwin") {
+    if (chip_device_platform == "linux" || chip_device_platform == "darwin" || chip_device_platform == "android") {
       defines += [ "CHIP_DEVICE_CONFIG_ENABLE_CHIPOBLE=${chip_enable_ble}" ]
     }
 

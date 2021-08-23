@@ -140,4 +140,33 @@ void JniReferences::CallVoidInt(JNIEnv * env, jobject object, const char * metho
     env->CallVoidMethod(object, method, argument);
 }
 
+void JniReferences::ReportError(JNIEnv * env, CHIP_ERROR cbErr, const char * functName)
+{
+    if (cbErr == CHIP_JNI_ERROR_EXCEPTION_THROWN)
+    {
+        ChipLogError(Support, "Java exception thrown in %s", functName);
+        env->ExceptionDescribe();
+    }
+    else
+    {
+        const char * errStr;
+        switch (cbErr.AsInteger())
+        {
+        case CHIP_JNI_ERROR_TYPE_NOT_FOUND.AsInteger():
+            errStr = "JNI type not found";
+            break;
+        case CHIP_JNI_ERROR_METHOD_NOT_FOUND.AsInteger():
+            errStr = "JNI method not found";
+            break;
+        case CHIP_JNI_ERROR_FIELD_NOT_FOUND.AsInteger():
+            errStr = "JNI field not found";
+            break;
+        default:
+            errStr = ErrorStr(cbErr);
+            break;
+        }
+        ChipLogError(Support, "Error in %s : %s", functName, errStr);
+    }
+}
+
 } // namespace chip
