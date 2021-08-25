@@ -40,6 +40,7 @@ using namespace chip;
 
 static void ThrowError(JNIEnv * env, CHIP_ERROR errToThrow);
 static CHIP_ERROR N2J_Error(JNIEnv * env, CHIP_ERROR inErr, jthrowable & outEx);
+static bool JavaBytesToUUID(JNIEnv * env, jbyteArray value, chip::Ble::ChipBleUUID & uuid);
 
 namespace {
     JavaVM * sJVM;
@@ -93,10 +94,91 @@ void JNI_OnUnload(JavaVM * jvm, void * reserved)
     chip::Platform::MemoryShutdown();
 }
 
-JNI_METHOD(void,setBLEManagerImpl)(JNIEnv *, jobject manager) 
+JNI_METHOD(void,nativeSetBLEManager)(JNIEnv *, jobject, jobject manager) 
 {
     StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
     chip::DeviceLayer::Internal::BLEMgrImpl().InitializeWithObject(manager);
+}
+
+JNI_METHOD(void, handleWriteConfirmation)
+(JNIEnv * env, jobject self, jint conn, jbyteArray svcId, jbyteArray charId)
+{
+    StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
+    BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
+
+    chip::Ble::ChipBleUUID svcUUID;
+    chip::Ble::ChipBleUUID charUUID;
+    VerifyOrReturn(JavaBytesToUUID(env, svcId, svcUUID),
+                   ChipLogError(DeviceLayer, "handleWriteConfirmation() called with invalid service ID"));
+    VerifyOrReturn(JavaBytesToUUID(env, charId, charUUID),
+                   ChipLogError(DeviceLayer, "handleWriteConfirmation() called with invalid characteristic ID"));
+
+    chip::DeviceLayer::Internal::BLEMgrImpl().HandleWriteConfirmation(connObj, &svcUUID, &charUUID);
+}
+
+JNI_METHOD(void, handleIndicationReceived)
+(JNIEnv * env, jobject self, jint conn, jbyteArray svcId, jbyteArray charId, jbyteArray value)
+{
+    StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
+    BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
+    const auto valueBegin               = env->GetByteArrayElements(value, nullptr);
+    const auto valueLength              = env->GetArrayLength(value);
+
+    chip::Ble::ChipBleUUID svcUUID;
+    chip::Ble::ChipBleUUID charUUID;
+    chip::System::PacketBufferHandle buffer;
+
+    VerifyOrExit(JavaBytesToUUID(env, svcId, svcUUID),
+                 ChipLogError(DeviceLayer, "handleIndicationReceived() called with invalid service ID"));
+    VerifyOrExit(JavaBytesToUUID(env, charId, charUUID),
+                 ChipLogError(DeviceLayer, "handleIndicationReceived() called with invalid characteristic ID"));
+
+    buffer = System::PacketBufferHandle::NewWithData(valueBegin, valueLength);
+    VerifyOrExit(!buffer.IsNull(), ChipLogError(DeviceLayer, "Failed to allocate packet buffer"));
+
+    chip::DeviceLayer::Internal::BLEMgrImpl().HandleIndicationReceived(connObj, &svcUUID, &charUUID, std::move(buffer));
+exit:
+    env->ReleaseByteArrayElements(value, valueBegin, 0);
+}
+
+JNI_METHOD(void, handleSubscribeComplete)
+(JNIEnv * env, jobject self, jint conn, jbyteArray svcId, jbyteArray charId)
+{
+    StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
+    BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
+
+    chip::Ble::ChipBleUUID svcUUID;
+    chip::Ble::ChipBleUUID charUUID;
+    VerifyOrReturn(JavaBytesToUUID(env, svcId, svcUUID),
+                   ChipLogError(DeviceLayer, "handleSubscribeComplete() called with invalid service ID"));
+    VerifyOrReturn(JavaBytesToUUID(env, charId, charUUID),
+                   ChipLogError(DeviceLayer, "handleSubscribeComplete() called with invalid characteristic ID"));
+
+    chip::DeviceLayer::Internal::BLEMgrImpl().HandleSubscribeComplete(connObj, &svcUUID, &charUUID);
+}
+
+JNI_METHOD(void, handleUnsubscribeComplete)
+(JNIEnv * env, jobject self, jint conn, jbyteArray svcId, jbyteArray charId)
+{
+    StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
+    BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
+
+    chip::Ble::ChipBleUUID svcUUID;
+    chip::Ble::ChipBleUUID charUUID;
+    VerifyOrReturn(JavaBytesToUUID(env, svcId, svcUUID),
+                   ChipLogError(DeviceLayer, "handleUnsubscribeComplete() called with invalid service ID"));
+    VerifyOrReturn(JavaBytesToUUID(env, charId, charUUID),
+                   ChipLogError(DeviceLayer, "handleUnsubscribeComplete() called with invalid characteristic ID"));
+
+    chip::DeviceLayer::Internal::BLEMgrImpl().HandleUnsubscribeComplete(connObj, &svcUUID, &charUUID);
+}
+
+JNI_METHOD(void, handleConnectionError)(JNIEnv * env, jobject self, jint conn)
+{
+    StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
+    BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
+
+    chip::DeviceLayer::Internal::BLEMgrImpl().HandleConnectionError(connObj, BLE_ERROR_APP_CLOSED_CONNECTION);
 }
 
 void ThrowError(JNIEnv * env, CHIP_ERROR errToThrow)
@@ -150,3 +232,18 @@ exit:
     env->DeleteLocalRef(errStrObj);
     return err;
 }
+
+static bool JavaBytesToUUID(JNIEnv * env, jbyteArray value, chip::Ble::ChipBleUUID & uuid)
+{
+    const auto valueBegin  = env->GetByteArrayElements(value, nullptr);
+    const auto valueLength = env->GetArrayLength(value);
+    bool result            = true;
+
+    VerifyOrExit(valueBegin && valueLength == sizeof(uuid.bytes), result = false);
+    memcpy(uuid.bytes, valueBegin, valueLength);
+
+exit:
+    env->ReleaseByteArrayElements(value, valueBegin, 0);
+    return result;
+}
+

@@ -18,7 +18,6 @@
 package chip.devicecontroller;
 
 import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCallback;
 import android.util.Log;
 import chip.devicecontroller.GetConnectedDeviceCallbackJni.GetConnectedDeviceCallback;
 
@@ -28,7 +27,6 @@ public class ChipDeviceController {
 
   private long deviceControllerPtr;
   private int connectionId;
-  private BluetoothGatt bleGatt;
   private CompletionListener completionListener;
 
   public ChipDeviceController() {
@@ -40,15 +38,11 @@ public class ChipDeviceController {
   }
 
   public BluetoothGatt getBluetoothGatt() {
-    return bleGatt;
+    return null;
   }
 
-  public BluetoothGattCallback getCallback() {
-    return AndroidChipStack.getInstance().getCallback();
-  }
-
-  public void pairDevice(BluetoothGatt bleServer, long deviceId, long setupPincode) {
-    pairDevice(bleServer, deviceId, setupPincode, null);
+  public void pairDevice(BluetoothGatt bleServer, int connId, long deviceId, long setupPincode) {
+    pairDevice(bleServer, connId, deviceId, setupPincode, null);
   }
 
   /**
@@ -63,11 +57,10 @@ public class ChipDeviceController {
    *     generated CSR nonce.
    */
   public void pairDevice(
-      BluetoothGatt bleServer, long deviceId, long setupPincode, byte[] csrNonce) {
+      BluetoothGatt bleServer, int connId, long deviceId, long setupPincode, byte[] csrNonce) {
     if (connectionId == 0) {
-      bleGatt = bleServer;
+      connectionId = connId;
 
-      connectionId = AndroidChipStack.getInstance().addConnection(this);
       if (connectionId == 0) {
         Log.e(TAG, "Failed to add Bluetooth connection.");
         completionListener.onError(new Exception("Failed to add Bluetooth connection."));
@@ -158,9 +151,9 @@ public class ChipDeviceController {
 
   public void onNotifyChipConnectionClosed(int connId) {
     // Clear connection state.
-    AndroidChipStack.getInstance().removeConnection(connId);
+//    AndroidChipStack.getInstance().removeConnection(connId);
     connectionId = 0;
-    bleGatt = null;
+//    bleGatt = null;
 
     Log.d(TAG, "Calling onNotifyChipConnectionClosed()");
     completionListener.onNotifyChipConnectionClosed();
@@ -191,12 +184,12 @@ public class ChipDeviceController {
     Log.d(TAG, "Closing GATT and removing connection for " + connId);
 
     // Close gatt
-    bleGatt.close();
+//    bleGatt.close();
 
     // Clear connection state.
-    AndroidChipStack.getInstance().removeConnection(connId);
+//    AndroidChipStack.getInstance().removeConnection(connId);
     connectionId = 0;
-    bleGatt = null;
+//    bleGatt = null;
     return true;
   }
 

@@ -38,7 +38,7 @@ namespace Internal {
  * Concrete implementation of the BLEManagerImpl singleton object for the Linux platforms.
  */
 class BLEManagerImpl final : public BLEManager,
-                             private Ble::BleLayer,
+                             public Ble::BleLayer,
                              private Ble::BlePlatformDelegate,
                              private Ble::BleApplicationDelegate,
                              private Ble::BleConnectionDelegate

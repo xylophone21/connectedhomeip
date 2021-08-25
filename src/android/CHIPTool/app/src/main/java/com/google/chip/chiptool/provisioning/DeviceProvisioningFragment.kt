@@ -26,6 +26,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import chip.platform.AndroidChipPlatform
+import chip.platform.BLEConnection
 import com.google.chip.chiptool.ChipClient
 import com.google.chip.chiptool.GenericChipDeviceListener
 import com.google.chip.chiptool.R
@@ -99,9 +101,11 @@ class DeviceProvisioningFragment : Fragment() {
 
       showMessage(R.string.rendezvous_over_ble_pairing_text)
       deviceController.setCompletionListener(ConnectionCallback())
+      AndroidChipPlatform.getInstance().bleManager.addConnection(BLECallback())
 
       val deviceId = DeviceIdUtil.getNextAvailableId(requireContext())
-      deviceController.pairDevice(gatt, deviceId, deviceInfo.setupPinCode)
+      var connId = bluetoothManager.connectionId
+      deviceController.pairDevice(gatt, connId, deviceId, deviceInfo.setupPinCode)
       DeviceIdUtil.setNextAvailableId(requireContext(), deviceId + 1)
     }
   }
@@ -156,19 +160,28 @@ class DeviceProvisioningFragment : Fragment() {
           ?.onCommissioningComplete(code)
     }
 
-    override fun onCloseBleComplete() {
-      Log.d(TAG, "onCloseBleComplete")
-    }
-
     override fun onError(error: Throwable?) {
       Log.d(TAG, "onError: $error")
     }
   }
 
   /** Callback from [DeviceProvisioningFragment] notifying any registered listeners. */
-  interface Callback {
+  interface Callback : BLEConnection {
     /** Notifies that commissioning has been completed. */
     fun onCommissioningComplete(code: Int)
+  }
+
+  inner class BLECallback : BLEConnection {
+    override fun getBluetoothGatt(): BluetoothGatt? {
+      return null;
+    }
+
+    override fun onCloseBleComplete(connId: Int) {
+      Log.d(TAG, "onCloseBleComplete")
+    }
+
+    override fun onNotifyChipConnectionClosed(connId: Int) {
+    }
   }
 
   companion object {

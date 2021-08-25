@@ -20,13 +20,49 @@ package chip.platform;
 public final class AndroidChipPlatform {
   private static final String TAG = AndroidChipPlatform.class.getSimpleName();
   private static AndroidChipPlatform sInstance = new AndroidChipPlatform();
+  private BLEManager mBLEManager = null;
+
+  static {
+    System.loadLibrary("AndroidPlatform");
+  }
 
   private AndroidChipPlatform() {
+  }
+
+  public BLEManager getBLEManager() {
+    return mBLEManager;
+  }
+
+  public void setBLEManager(BLEManager manager) {
+    if(mBLEManager == null) {
+      mBLEManager = manager;
+      nativeSetBLEManager(manager);
+    }
   }
 
   public static AndroidChipPlatform getInstance() {
     return sInstance;
   }
 
-  public native void setBLEManagerImpl(BLEManager manager);
+  public native void nativeSetBLEManager(BLEManager manager);
+
+  //apis in BleLayer.h called by Platform
+  //write success
+  public native void handleWriteConfirmation(
+          int connId, byte[] svcId, byte[] charId, boolean success);
+
+  //onSubscribeCharacteristic get data
+  public native void handleIndicationReceived(
+          int connId, byte[] svcId, byte[] charId, byte[] data);
+
+  //Subscribe success
+  public native void handleSubscribeComplete(
+          int connId, byte[] svcId, byte[] charId, boolean success);
+
+  //Unsubscribe success
+  public native void handleUnsubscribeComplete(
+          int connId, byte[] svcId, byte[] charId, boolean success);
+
+  //connection status changed
+  public native void handleConnectionError(int connId);
 }

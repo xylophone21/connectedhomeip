@@ -4,8 +4,10 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
+import chip.platform.AndroidBLEManager
 import chip.test.TestEngine
 import com.tcl.chip.chiptest.databinding.ActivityMainBinding
+import chip.platform.AndroidChipPlatform
 
 
 class MainActivity : AppCompatActivity() {
@@ -20,6 +22,8 @@ class MainActivity : AppCompatActivity() {
 
         TestEngine.setContext(this);
         var testList = TestEngine.getTestList();
+
+        AndroidChipPlatform.getInstance().bleManager = AndroidBLEManager();
 
         var adapter = ArrayAdapter<String>(this, android.R.layout.simple_list_item_1,testList);
         binding.testList.adapter = adapter;

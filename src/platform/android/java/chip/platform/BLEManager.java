@@ -17,7 +17,16 @@
  */
 package chip.platform;
 
+import android.bluetooth.BluetoothGattCallback;
+
 public interface BLEManager {
+    //For app
+    public int addConnection(BLEConnection connObj);
+    BLEConnection removeConnection(int connId);
+    BLEConnection getConnection(int connId);
+    public BluetoothGattCallback getCallback();
+
+    //BLEManager
     int init();
     long setFlag(long flag, boolean isSet);
     boolean hasFlag(long flag);
@@ -27,7 +36,6 @@ public interface BLEManager {
     boolean onUnsubscribeCharacteristic(int connId, byte[] svcId, byte[] charId);
     boolean onCloseConnection(int connId);
     int onGetMTU(int connId);
-    //onSendCharacteristic
     boolean onSendWriteRequest(int connId, byte[] svcId, byte[] charId, byte[] characteristicData);
 
     //BleApplicationDelegate

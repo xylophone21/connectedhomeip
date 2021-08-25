@@ -29,9 +29,11 @@
 #include <support/SafeInt.h>
 #include <support/JniReferences.h>
 #include <support/CHIPJNIError.h>
+#include <support/StackLock.h>
 
 #if CHIP_DEVICE_CONFIG_ENABLE_CHIPOBLE
 
+using namespace chip;
 using namespace ::nl;
 using namespace ::chip::Ble;
 
@@ -58,7 +60,7 @@ void BLEManagerImpl::InitializeWithObject(jobject manager)
     mBLEManagerObject = env->NewGlobalRef(manager);
     VerifyOrReturn(mBLEManagerObject != nullptr, ChipLogError(DeviceLayer, "Failed to NewGlobalRef BLEManager"));
 
-    jclass BLEManagerClass = env->GetObjectClass(mBLEManagerObject);
+    jclass BLEManagerClass = env->GetObjectClass(manager);
     VerifyOrReturn(BLEManagerClass != nullptr, ChipLogError(DeviceLayer, "Failed to get BLEManager Java class"));
 
     mInitMethod = env->GetMethodID(BLEManagerClass, "init", "()I");
@@ -117,14 +119,14 @@ void BLEManagerImpl::InitializeWithObject(jobject manager)
         env->ExceptionClear();
     }
 
-    mOnNotifyChipConnectionClosedMethod = env->GetStaticMethodID(BLEManagerClass, "onNotifyChipConnectionClosed", "(I)V");
+    mOnNotifyChipConnectionClosedMethod = env->GetMethodID(BLEManagerClass, "onNotifyChipConnectionClosed", "(I)V");
     if (mOnNotifyChipConnectionClosedMethod == nullptr)
     {
         ChipLogError(DeviceLayer, "Failed to access BLEManager 'onNotifyChipConnectionClosed' method");
         env->ExceptionClear();
     }
 
-    mOnNewConnectionMethod = env->GetStaticMethodID(BLEManagerClass, "onNewConnection", "(I)V");
+    mOnNewConnectionMethod = env->GetMethodID(BLEManagerClass, "onNewConnection", "(I)V");
     if (mOnNewConnectionMethod == nullptr)
     {
         ChipLogError(DeviceLayer, "Failed to access BLEManager 'onNewConnection' method");
@@ -149,7 +151,11 @@ CHIP_ERROR BLEManagerImpl::_Init()
     JNIEnv * env = JniReferences::GetInstance().GetEnvForCurrentThread();
     VerifyOrReturnLogError(env != nullptr, CHIP_JNI_ERROR_NO_ENV);
 
-    jint ret = env->CallIntMethod(mBLEManagerObject, mInitMethod);
+    jint ret;
+    {
+        StackUnlockGuard unlockGuard(JniReferences::GetInstance().GetStackLock());
+        ret = env->CallIntMethod(mBLEManagerObject, mInitMethod);
+    }
     if (env->ExceptionCheck())
     {
         ChipLogError(DeviceLayer, "Java exception in BLEManager::init");
@@ -259,7 +265,10 @@ bool BLEManagerImpl::SubscribeCharacteristic(BLE_CONNECTION_OBJECT conId, const 
 
     env->ExceptionClear();
     tmpConnObj = reinterpret_cast<intptr_t>(conId);
-    rc = (bool) env->CallBooleanMethod(mBLEManagerObject, mOnSubscribeCharacteristicMethod, static_cast<jint>(tmpConnObj), svcIdObj, charIdObj);
+    {
+        StackUnlockGuard unlockGuard(JniReferences::GetInstance().GetStackLock());
+        rc = (bool) env->CallBooleanMethod(mBLEManagerObject, mOnSubscribeCharacteristicMethod, static_cast<jint>(tmpConnObj), svcIdObj, charIdObj);
+    }
     VerifyOrExit(!env->ExceptionCheck(), err = CHIP_JNI_ERROR_EXCEPTION_THROWN);
 
 exit:
@@ -296,7 +305,10 @@ bool BLEManagerImpl::UnsubscribeCharacteristic(BLE_CONNECTION_OBJECT conId, cons
 
     env->ExceptionClear();
     tmpConnObj = reinterpret_cast<intptr_t>(conId);
-    rc = (bool) env->CallBooleanMethod(mBLEManagerObject, mOnUnsubscribeCharacteristicMethod, static_cast<jint>(tmpConnObj), svcIdObj, charIdObj);
+    {
+        StackUnlockGuard unlockGuard(JniReferences::GetInstance().GetStackLock());
+        rc = (bool) env->CallBooleanMethod(mBLEManagerObject, mOnUnsubscribeCharacteristicMethod, static_cast<jint>(tmpConnObj), svcIdObj, charIdObj);
+    }
     VerifyOrExit(!env->ExceptionCheck(), err = CHIP_JNI_ERROR_EXCEPTION_THROWN);
 
 exit:
@@ -325,7 +337,10 @@ bool BLEManagerImpl::CloseConnection(BLE_CONNECTION_OBJECT conId)
 
     env->ExceptionClear();
     tmpConnObj = reinterpret_cast<intptr_t>(conId);
-    rc = (bool) env->CallBooleanMethod(mBLEManagerObject, mOnCloseConnectionMethod, static_cast<jint>(tmpConnObj));
+    {
+        StackUnlockGuard unlockGuard(JniReferences::GetInstance().GetStackLock());
+        rc = (bool) env->CallBooleanMethod(mBLEManagerObject, mOnCloseConnectionMethod, static_cast<jint>(tmpConnObj));
+    }
     VerifyOrExit(!env->ExceptionCheck(), err = CHIP_JNI_ERROR_EXCEPTION_THROWN);
 
 exit:
@@ -352,7 +367,10 @@ uint16_t BLEManagerImpl::GetMTU(BLE_CONNECTION_OBJECT conId) const
 
     env->ExceptionClear();
     tmpConnObj = reinterpret_cast<intptr_t>(conId);
-    mtu        = (int16_t) env->CallIntMethod(mBLEManagerObject, mOnGetMTUMethod, static_cast<jint>(tmpConnObj));
+    {
+        StackUnlockGuard unlockGuard(JniReferences::GetInstance().GetStackLock());
+        mtu        = (int16_t) env->CallIntMethod(mBLEManagerObject, mOnGetMTUMethod, static_cast<jint>(tmpConnObj));
+    }
     VerifyOrExit(!env->ExceptionCheck(), err = CHIP_JNI_ERROR_EXCEPTION_THROWN);
 
 exit:
@@ -399,8 +417,11 @@ bool BLEManagerImpl::SendWriteRequest(BLE_CONNECTION_OBJECT conId, const Ble::Ch
 
     env->ExceptionClear();
     tmpConnObj = reinterpret_cast<intptr_t>(conId);
-    rc = (bool) env->CallBooleanMethod(mBLEManagerObject, mOnSendWriteRequestMethod, static_cast<jint>(tmpConnObj), svcIdObj, charIdObj,
-                                        characteristicDataObj);
+    {
+        StackUnlockGuard unlockGuard(JniReferences::GetInstance().GetStackLock());
+        rc = (bool) env->CallBooleanMethod(mBLEManagerObject, mOnSendWriteRequestMethod, static_cast<jint>(tmpConnObj), svcIdObj, charIdObj,
+                                             characteristicDataObj);
+    }
     VerifyOrExit(!env->ExceptionCheck(), err = CHIP_JNI_ERROR_EXCEPTION_THROWN);
 
 exit:
@@ -445,7 +466,10 @@ void BLEManagerImpl::NotifyChipConnectionClosed(BLE_CONNECTION_OBJECT conId)
 
     env->ExceptionClear();
     tmpConnObj = reinterpret_cast<intptr_t>(conId);
-    env->CallVoidMethod(mBLEManagerObject, mOnNotifyChipConnectionClosedMethod, static_cast<jint>(tmpConnObj));
+    {
+        StackUnlockGuard unlockGuard(JniReferences::GetInstance().GetStackLock());
+        env->CallVoidMethod(mBLEManagerObject, mOnNotifyChipConnectionClosedMethod, static_cast<jint>(tmpConnObj));
+    }
     VerifyOrExit(!env->ExceptionCheck(), err = CHIP_JNI_ERROR_EXCEPTION_THROWN);
 
 exit:
@@ -469,7 +493,10 @@ void BLEManagerImpl::NewConnection(BleLayer * bleLayer, void * appState, const u
     VerifyOrExit(env != NULL, err = CHIP_JNI_ERROR_NO_ENV);
 
     env->ExceptionClear();
-    env->CallVoidMethod(mBLEManagerObject, mOnNewConnectionMethod, static_cast<jint>(connDiscriminator));
+    {
+        StackUnlockGuard unlockGuard(JniReferences::GetInstance().GetStackLock());
+        env->CallVoidMethod(mBLEManagerObject, mOnNewConnectionMethod, static_cast<jint>(connDiscriminator));
+    }
     VerifyOrExit(!env->ExceptionCheck(), err = CHIP_JNI_ERROR_EXCEPTION_THROWN);
 
 exit:
@@ -499,7 +526,12 @@ CHIP_ERROR BLEManagerImpl::HasFlag(BLEManagerImpl::Flags flag, bool& has)
     JNIEnv * env = JniReferences::GetInstance().GetEnvForCurrentThread();
     VerifyOrReturnLogError(env != nullptr, CHIP_JNI_ERROR_NO_ENV);
 
-    jboolean jret = env->CallBooleanMethod(mBLEManagerObject, mHasFlagMethod, f);
+    jboolean jret;
+
+    {
+        StackUnlockGuard unlockGuard(JniReferences::GetInstance().GetStackLock());
+        jret = env->CallBooleanMethod(mBLEManagerObject, mHasFlagMethod, f);
+    }
     if (env->ExceptionCheck())
     {
         ChipLogError(DeviceLayer, "Java exception in BLEManager::hasFlag");
@@ -522,7 +554,10 @@ CHIP_ERROR BLEManagerImpl::SetFlag(BLEManagerImpl::Flags flag, bool isSet)
     JNIEnv * env = JniReferences::GetInstance().GetEnvForCurrentThread();
     VerifyOrReturnLogError(env != nullptr, CHIP_JNI_ERROR_NO_ENV);
 
-    env->CallLongMethod(mBLEManagerObject, mSetFlagMethod, jFlag, jIsSet);
+    {
+        StackUnlockGuard unlockGuard(JniReferences::GetInstance().GetStackLock());
+        env->CallLongMethod(mBLEManagerObject, mSetFlagMethod, jFlag, jIsSet);
+    }
     if (env->ExceptionCheck())
     {
         ChipLogError(DeviceLayer, "Java exception in BLEManager::satFlag");
