@@ -29,6 +29,7 @@
 #include <support/StackLock.h>
 #include <platform/ConnectivityManager.h>
 #include <platform/internal/BLEManager.h>
+#include <platform/KeyValueStoreManager.h>
 #include <support/CHIPMem.h>
 
 #include "BLEManagerImpl.h"
@@ -94,6 +95,7 @@ void JNI_OnUnload(JavaVM * jvm, void * reserved)
     chip::Platform::MemoryShutdown();
 }
 
+// for BLEManager
 JNI_METHOD(void,nativeSetBLEManager)(JNIEnv *, jobject, jobject manager) 
 {
     StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
@@ -179,6 +181,13 @@ JNI_METHOD(void, handleConnectionError)(JNIEnv * env, jobject self, jint conn)
     BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
 
     chip::DeviceLayer::Internal::BLEMgrImpl().HandleConnectionError(connObj, BLE_ERROR_APP_CLOSED_CONNECTION);
+}
+
+//for KeyValueStoreManager
+JNI_METHOD(void, setKeyValueStoreManager)(JNIEnv * env, jclass self, jobject manager)
+{
+    StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
+    chip::DeviceLayer::PersistedStorage::KeyValueStoreMgrImpl().InitializeWithObject(manager);
 }
 
 void ThrowError(JNIEnv * env, CHIP_ERROR errToThrow)

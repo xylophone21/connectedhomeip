@@ -8,6 +8,7 @@ import chip.platform.AndroidBLEManager
 import chip.test.TestEngine
 import com.tcl.chip.chiptest.databinding.ActivityMainBinding
 import chip.platform.AndroidChipPlatform
+import chip.platform.PreferencesKeyValueStoreManager
 
 
 class MainActivity : AppCompatActivity() {
@@ -24,6 +25,7 @@ class MainActivity : AppCompatActivity() {
         var testList = TestEngine.getTestList();
 
         AndroidChipPlatform.getInstance().bleManager = AndroidBLEManager();
+        AndroidChipPlatform.getInstance().setKeyValueStoreManager(PreferencesKeyValueStoreManager(this));
 
         var adapter = ArrayAdapter<String>(this, android.R.layout.simple_list_item_1,testList);
         binding.testList.adapter = adapter;

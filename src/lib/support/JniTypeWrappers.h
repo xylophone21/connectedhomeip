@@ -23,6 +23,7 @@
 #include <lib/support/Span.h>
 #include <sstream>
 
+namespace chip {
 /// Exposes the underlying UTF string from a jni string
 class JniUtfString
 {
@@ -93,3 +94,4 @@ public:
 private:
     jclass mClassRef;
 };
+} // namespace chip

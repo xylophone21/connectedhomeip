@@ -29,6 +29,11 @@ public final class AndroidChipPlatform {
   private AndroidChipPlatform() {
   }
 
+  public static AndroidChipPlatform getInstance() {
+    return sInstance;
+  }
+
+  //for BLEManager
   public BLEManager getBLEManager() {
     return mBLEManager;
   }
@@ -38,10 +43,6 @@ public final class AndroidChipPlatform {
       mBLEManager = manager;
       nativeSetBLEManager(manager);
     }
-  }
-
-  public static AndroidChipPlatform getInstance() {
-    return sInstance;
   }
 
   public native void nativeSetBLEManager(BLEManager manager);
@@ -65,4 +66,8 @@ public final class AndroidChipPlatform {
 
   //connection status changed
   public native void handleConnectionError(int connId);
+
+
+  //for KeyValueStoreManager
+  public native void setKeyValueStoreManager(KeyValueStoreManager manager);
 }

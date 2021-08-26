@@ -166,7 +166,7 @@ class DeviceProvisioningFragment : Fragment() {
   }
 
   /** Callback from [DeviceProvisioningFragment] notifying any registered listeners. */
-  interface Callback : BLEConnection {
+  interface Callback {
     /** Notifies that commissioning has been completed. */
     fun onCommissioningComplete(code: Int)
   }

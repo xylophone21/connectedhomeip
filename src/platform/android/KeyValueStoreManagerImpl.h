@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include <jni.h>
 
 namespace chip {
 namespace DeviceLayer {
@@ -31,23 +32,26 @@ namespace PersistedStorage {
 class KeyValueStoreManagerImpl : public KeyValueStoreManager
 {
 public:
-    /**
-     * @brief
-     * Initalize the KVS, must be called before using.
-     */
-    void Init(const char * file) { }
+
+    void InitializeWithObject(jobject managerObject);
+
+private:
 
     CHIP_ERROR _Get(const char * key, void * value, size_t value_size, size_t * read_bytes_size = nullptr, size_t offset = 0);
     CHIP_ERROR _Delete(const char * key);
     CHIP_ERROR _Put(const char * key, const void * value, size_t value_size);
 
-private:
-
     // ===== Members for internal use by the following friends.
     friend KeyValueStoreManager & KeyValueStoreMgr();
     friend KeyValueStoreManagerImpl & KeyValueStoreMgrImpl();
+    friend KeyValueStoreManager;
 
     static KeyValueStoreManagerImpl sInstance;
+
+    jobject mKeyValueStoreManagerObject = nullptr;
+    jmethodID mGetMethod = nullptr;
+    jmethodID mSetMethod = nullptr;
+    jmethodID mDeleteMethod = nullptr;
 };
 
 /**
