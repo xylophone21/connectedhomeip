@@ -43,7 +43,7 @@ TEMPLATE_PREFIX = '''/*
 
 '''
 
-### Forward declarations will be added here
+# Forward declarations will be added here
 
 TEMPLATE_MAIN_START = '''
 int main()
@@ -54,72 +54,54 @@ int main()
 
 '''
 
-TEMPLATE_SO_START =  '''
-extern "C" int TestMain(int setOutputStyle);
-
-int TestMain(int setOutputStyle)
-{
-    int code = 0;
-
-    if(setOutputStyle) {
-      nlTestSetOutputStyle(OUTPUT_CSV);
-    }
-
-'''
-
-### Test invokation will be added here
+# Test invokation will be added here
 
 TEMPLATE_SUFFIX = '''
     return code;
 }'''
 
+
 def main(argv):
-  parser = optparse.OptionParser()
+    parser = optparse.OptionParser()
 
-  parser.add_option('--input_file')
-  parser.add_option('--output_file')
-  parser.add_option('--so_mode',action="store_true")
+    parser.add_option('--input_file')
+    parser.add_option('--output_file')
 
-  options, _ = parser.parse_args(argv)
-  
-  tests = []
+    options, _ = parser.parse_args(argv)
 
-  TEST_SUITE_RE = re.compile(r'\s*CHIP_REGISTER_TEST_SUITE\(([^)]*)\)')
+    tests = []
 
-  with open(options.input_file, 'r') as input_file:
-      for l in input_file.readlines():
-          match = TEST_SUITE_RE.match(l)
-          if not match: 
-              continue 
-        
-          tests.append(match.group(1))
+    TEST_SUITE_RE = re.compile(r'\s*CHIP_REGISTER_TEST_SUITE\(([^)]*)\)')
 
-  if not tests:
-      print("ERROR: no tests found in '%s'" % input_file);
-      print("Did you forget to CHIP_REGISTER_TEST_SUITE?");
-      return 1
+    with open(options.input_file, 'r') as input_file:
+        for l in input_file.readlines():
+            match = TEST_SUITE_RE.match(l)
+            if not match:
+                continue
 
-  with open(options.output_file, 'w') as output_file:
-      output_file.write(TEMPLATE_PREFIX)
+            tests.append(match.group(1))
 
-      for test in tests:
-         output_file.write("int %s();\n" % test)
-      output_file.write("\n");
+    if not tests:
+        print("ERROR: no tests found in '%s'" % input_file)
+        print("Did you forget to CHIP_REGISTER_TEST_SUITE?")
+        return 1
 
-      if options.so_mode:
-        output_file.write(TEMPLATE_SO_START)
-      else:
+    with open(options.output_file, 'w') as output_file:
+        output_file.write(TEMPLATE_PREFIX)
+
+        for test in tests:
+            output_file.write("int %s();\n" % test)
+        output_file.write("\n")
+
         output_file.write(TEMPLATE_MAIN_START)
 
-      for test in tests:
-         output_file.write("    code = code | (%s());\n" % test)
-      output_file.write("\n");
+        for test in tests:
+            output_file.write("    code = code | (%s());\n" % test)
+        output_file.write("\n")
 
+        output_file.write(TEMPLATE_SUFFIX)
 
-      output_file.write(TEMPLATE_SUFFIX)
-  
-
-  return 0
+    return 0
 
 
 if __name__ == '__main__':

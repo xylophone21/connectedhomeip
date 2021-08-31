@@ -23,10 +23,9 @@ allprojects {
 }
 
 ext {
-    // point to the SDK build dir ("../../../../out/android_arm64" for example) based CHIPTest/
-    // to build SDK from source code and debug in Android Studio,
-    // null to use SDK prebuilt by scripts/examples/android_app.sh
-    matterBuildSrcDir = null
+    matterSdkSourceBuild = project.getProperties().get("matter.sdk.source.build").toBoolean()
+    matterSdkBuildRoot = project.getProperties().get("matter.sdk.build.root")
+    matterSdkUtestLib = project.getProperties().get("matter.sdk.utest.lib")
 }
 
 task clean(type: Delete) {

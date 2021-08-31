@@ -23,6 +23,8 @@ import("${chip_root}/build/chip/java/rules.gni")
 assert(chip_device_platform == "android")
 
 static_library("android") {
+  output_name = "libAndroidPlatform"
+
   sources = [
     "BLEManagerImpl.cpp",
     "BLEManagerImpl.h",
@@ -42,6 +44,7 @@ static_library("android") {
     "PosixConfig.h",
     "MdnsImpl.cpp",
     "MdnsImpl.h",
+    "AndroidChipPlatform-JNI.cpp",
   ]
 
   deps = [ 
@@ -56,27 +59,11 @@ static_library("android") {
   public_configs = []
 }
 
-shared_library("jni") {
-  output_name = "libAndroidPlatform"
-
-  sources = [
-    "AndroidChipPlatform-JNI.cpp",
-  ]
-
-  public_deps = [
-    ":android",
-    "${chip_root}/src/platform",
-  ]
-  
-  output_dir = "${root_out_dir}/lib/jni/${android_abi}"
-}
-
 android_library("java") {
   output_name = "AndroidPlatform.jar"
 
   data_deps = [
-    ":jni",
-    "${chip_root}/build/chip/java:shared_cpplib",
+    ":android",
   ]
 
   sources = [

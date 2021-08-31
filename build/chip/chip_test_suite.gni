@@ -16,7 +16,6 @@ import("//build_overrides/build.gni")
 import("//build_overrides/chip.gni")
 
 import("${chip_root}/build/chip/chip_test.gni")
-import("${chip_root}/build/chip/chip_test_somode.gni")
 import("${chip_root}/build/chip/tests.gni")
 import("${dir_pw_unit_test}/test.gni")
 
@@ -120,33 +119,14 @@ template("chip_test_suite") {
             "--input_file=" + rebase_path(_test, root_build_dir),
             "--output_file=" + rebase_path(_driver_name, root_build_dir),
           ]
-
-          if(chip_link_tests_somode) {
-            args += ["--so_mode"]
-          }
-
         }
 
-        if(chip_link_tests_somode) {
-
-          chip_test_somode(_test_name) {
-            sources = [ _driver_name ]
-            public_deps = [
-              ":${_suite_name}_lib",
-              ":${_test_name}_generate_driver",
-            ]
-          }
-
-        } else {
-
-          chip_test(_test_name) {
-            sources = [ _driver_name ]
-            public_deps = [
-              ":${_suite_name}_lib",
-              ":${_test_name}_generate_driver",
-            ]
-          }
-          
+        chip_test(_test_name) {
+          sources = [ _driver_name ]
+          public_deps = [
+            ":${_suite_name}_lib",
+            ":${_test_name}_generate_driver",
+          ]
         }
 
         tests += [ _test_name ]

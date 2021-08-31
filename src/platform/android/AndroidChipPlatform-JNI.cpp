@@ -33,6 +33,7 @@
 #include <support/CHIPMem.h>
 
 #include "BLEManagerImpl.h"
+#include "AndroidChipPlatform-JNI.h"
 
 using namespace chip;
 
@@ -49,7 +50,7 @@ namespace {
     jclass sAndroidChipPlatformExceptionCls = NULL;
 } // namespace
 
-jint JNI_OnLoad(JavaVM * jvm, void * reserved)
+CHIP_ERROR AndroidChipPlatformJNI_OnLoad(JavaVM * jvm, void * reserved)
 {
     CHIP_ERROR err = CHIP_NO_ERROR;
     JNIEnv * env;
@@ -84,10 +85,10 @@ exit:
         JNI_OnUnload(jvm, reserved);
     }
 
-    return (err == CHIP_NO_ERROR) ? JNI_VERSION_1_6 : JNI_ERR;
+    return err;
 }
 
-void JNI_OnUnload(JavaVM * jvm, void * reserved)
+void AndroidChipPlatformJNI_OnUnload(JavaVM * jvm, void * reserved)
 {
     StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
     ChipLogProgress(DeviceLayer, "AndroidChipPlatform JNI_OnUnload() called");
@@ -255,4 +256,3 @@ exit:
     env->ReleaseByteArrayElements(value, valueBegin, 0);
     return result;
 }
-

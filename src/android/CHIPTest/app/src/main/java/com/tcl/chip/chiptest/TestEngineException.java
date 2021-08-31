@@ -15,7 +15,7 @@
  *   limitations under the License.
  *
  */
-package chip.test;
+package com.tcl.chip.chiptest;
 
 /** Exception thrown from TestEngine. */
 public class TestEngineException extends Exception {

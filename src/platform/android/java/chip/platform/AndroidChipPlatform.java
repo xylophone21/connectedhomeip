@@ -22,10 +22,6 @@ public final class AndroidChipPlatform {
   private static AndroidChipPlatform sInstance = new AndroidChipPlatform();
   private BLEManager mBLEManager = null;
 
-  static {
-    System.loadLibrary("AndroidPlatform");
-  }
-
   private AndroidChipPlatform() {
   }
 

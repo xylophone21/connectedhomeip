@@ -30,6 +30,8 @@
 #include <support/JniReferences.h>
 #include <support/CHIPJNIError.h>
 #include <support/StackLock.h>
+#include <support/UnitTestRegistration.h>
+#include <platform/android/AndroidChipPlatform-JNI.h>
 
 #include <nlunit-test.h>
 
@@ -45,7 +47,7 @@ static void ThrowError(JNIEnv * env, CHIP_ERROR errToThrow);
 static CHIP_ERROR N2J_Error(JNIEnv * env, CHIP_ERROR inErr, jthrowable & outEx);
 // static void ReportError(JNIEnv * env, CHIP_ERROR cbErr, const char * functName);
 
-jint JNI_OnLoad(JavaVM * jvm, void * reserved)
+jint JNI_OnLoad(JavaVM *jvm, void * reserved)
 {
     CHIP_ERROR err = CHIP_NO_ERROR;
     JNIEnv * env;
@@ -53,7 +55,7 @@ jint JNI_OnLoad(JavaVM * jvm, void * reserved)
     ChipLogProgress(Test, "JNI_OnLoad() called");
 
     // Save a reference to the JVM.  Will need this to call back into Java.
-    JniReferences::GetInstance().SetJavaVm(jvm, "chip/test/TestEngine");
+    JniReferences::GetInstance().SetJavaVm(jvm, "com/tcl/chip/chiptest/TestEngine");
     sJVM = jvm;
 
     // Get a JNI environment object.
@@ -63,13 +65,16 @@ jint JNI_OnLoad(JavaVM * jvm, void * reserved)
     ChipLogProgress(Test, "Loading Java class references.");
 
     // Get various class references need by the API.
-    err = JniReferences::GetInstance().GetClassRef(env, "chip/test/TestEngine", sTestEngineCls);
+    err = JniReferences::GetInstance().GetClassRef(env, "com/tcl/chip/chiptest/TestEngine", sTestEngineCls);
     SuccessOrExit(err);
 
-    err = JniReferences::GetInstance().GetClassRef(env, "chip/test/TestEngineException",
+    err = JniReferences::GetInstance().GetClassRef(env, "com/tcl/chip/chiptest/TestEngineException",
                                                    sTestEngineExceptionCls);
     SuccessOrExit(err);
     ChipLogProgress(Test, "Java class references loaded.");
+
+    err = AndroidChipPlatformJNI_OnLoad(jvm, reserved);
+    SuccessOrExit(err);
 
 exit:
     if (err != CHIP_NO_ERROR)
@@ -86,6 +91,8 @@ void JNI_OnUnload(JavaVM * jvm, void * reserved)
 {
     StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
     ChipLogProgress(Test, "JNI_OnUnload() called");
+
+    AndroidChipPlatformJNI_OnUnload(jvm, reserved);
 
     sJVM = NULL;
 }
@@ -260,46 +267,13 @@ static nl_test_output_logger_t jni_test_logger = {
     jni_log_statAssert,
 };
 
-extern "C"
-JNIEXPORT jint JNICALL
-Java_chip_test_TestEngine_nativeRunTest(JNIEnv *env, jclass clazz, jstring testFile) 
-{    
+extern "C" JNIEXPORT jint Java_com_tcl_chip_chiptest_TestEngine_runTest(JNIEnv *env, jclass clazz)
+{
     CHIP_ERROR err = CHIP_NO_ERROR;
-    void *handle = NULL;
-    int (*testMain)(int);
-    void (*nlTestSetLogger)(nlTestOutputLogger*);
-
-    const char * testFileStr = env->GetStringUTFChars(testFile, 0);
-    VerifyOrExit(testFileStr != NULL, err = CHIP_JNI_ERROR_NULL_OBJECT);
-
-    handle = dlopen(testFileStr, RTLD_LAZY);
-    VerifyOrExit(handle, err = CHIP_ERROR_OPEN_FAILED);
-
-    *(void**)(&nlTestSetLogger) = dlsym(handle, "nlTestSetLogger");
-    VerifyOrExit(nlTestSetLogger, err = CHIP_ERROR_READ_FAILED);
-
-    *(void**)(&testMain) = dlsym(handle, "TestMain");
-    VerifyOrExit(testMain, err = CHIP_ERROR_READ_FAILED);
 
     nlTestSetLogger(&jni_test_logger);
-    testMain(0);
 
-exit:
-    if (err != CHIP_NO_ERROR)
-    {
-        ReportError(env, err, __FUNCTION__);
-    }
+    jint ret = RunRegisteredUnitTests();
 
-    if(testFileStr) {
-        env->ReleaseStringUTFChars(testFile, testFileStr);
-    }
-
-    if(handle) {
-        dlclose(handle);
-    }
-
-    return (jint)err.AsInteger();
+    return ret;
 }
-
-
-

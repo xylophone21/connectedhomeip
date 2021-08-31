@@ -17,6 +17,14 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {abiFilters 'arm64-v8a'}
+
+        externalNativeBuild {
+            cmake {
+                arguments "-DMATTER_SDK_SOURCE_BUILD="+rootProject.ext.matterSdkSourceBuild \
+                    , "-DMATTER_SDK_BUILD_ROOT="+rootProject.ext.matterSdkBuildRoot \
+                    , "-DMATTER_SDK_UTEST_LIB="+rootProject.ext.matterSdkUtestLib
+            }
+        }
     }
 
     buildTypes {
@@ -39,28 +47,20 @@ android {
         jvmTarget = '1.8'
     }
 
-    if (rootProject.ext.matterBuildSrcDir == null) {
-        sourceSets {
-            main {
-                // let gradle pack the shared library into apk
-                jniLibs.srcDirs = ['libs/jniLibs']
-            }
+    externalNativeBuild {
+        cmake {
+            path file('src/main/cpp/CMakeLists.txt')
+            version '3.10.2'
         }
     }
-    else {
+
+    if (rootProject.ext.matterSdkSourceBuild) {
         sourceSets {
             main {
                 java.srcDirs = [
                         'src/main/java/',
                         '../../../test_driver/android/src',
                 ]
-            }
-        }
-
-        externalNativeBuild {
-            cmake {
-                path file(rootProject.ext.matterBuildSrcDir + '/CMakeLists.txt')
-                version '3.10.2'
             }
         }
     }
@@ -70,8 +70,7 @@ android {
 }
 
 dependencies {
-
-    if(rootProject.ext.matterBuildSrcDir == null) {
+    if(!rootProject.ext.matterSdkSourceBuild) {
         implementation fileTree(dir: "libs", include: ["*.jar"])
     }
 
