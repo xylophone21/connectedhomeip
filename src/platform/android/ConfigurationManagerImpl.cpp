@@ -30,10 +30,12 @@
 
 #include <core/CHIPVendorIdentifiers.hpp>
 #include <platform/ConfigurationManager.h>
-#include <platform/android/PosixConfig.h>
+#include <platform/android/AndroidConfig.h>
 #include <platform/internal/GenericConfigurationManagerImpl.cpp>
 #include <support/CodeUtils.h>
 #include <support/logging/CHIPLogging.h>
+#include <support/JniTypeWrappers.h>
+#include <support/CHIPJNIError.h>
 
 namespace chip {
 namespace DeviceLayer {
@@ -43,6 +45,17 @@ using namespace ::chip::DeviceLayer::Internal;
 /** Singleton instance of the ConfigurationManager implementation object.
  */
 ConfigurationManagerImpl ConfigurationManagerImpl::sInstance;
+
+
+void ConfigurationManagerImpl::InitializeWithObject(jobject managerObject)
+{
+    JNIEnv * env                     = JniReferences::GetInstance().GetEnvForCurrentThread();
+    mConfigurationManagerObject      = env->NewGlobalRef(managerObject);
+    jclass configurationManagerClass = env->GetObjectClass(mConfigurationManagerObject);
+    VerifyOrReturn(configurationManagerClass != nullptr, ChipLogError(DeviceLayer, "Failed to get KVS Java class"));
+
+    AndroidConfig::InitializeWithObject(managerObject);
+}
 
 CHIP_ERROR ConfigurationManagerImpl::_Init()
 {

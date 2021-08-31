@@ -25,6 +25,7 @@
 
 #include <functional>
 #include <inttypes.h>
+#include <jni.h>
 
 #include <platform/internal/CHIPDeviceLayerInternal.h>
 
@@ -32,15 +33,13 @@ namespace chip {
 namespace DeviceLayer {
 namespace Internal {
 
-class ChipLinuxStorage;
-
 /**
  * Provides functions and definitions for accessing device configuration information on the Posix.
  *
  * This class is designed to be mixed-in to concrete implementation classes as a means to
  * provide access to configuration information to generic base classes.
  */
-class PosixConfig
+class AndroidConfig
 {
 public:
     struct Key;
@@ -107,11 +106,10 @@ protected:
     static CHIP_ERROR EnsureNamespace(const char * ns);
     static CHIP_ERROR ClearNamespace(const char * ns);
 
-private:
-    static ChipLinuxStorage * GetStorageForNamespace(Key key);
+    static void InitializeWithObject(jobject managerObject);
 };
 
-struct PosixConfig::Key
+struct AndroidConfig::Key
 {
     const char * Namespace;
     const char * Name;
@@ -119,7 +117,7 @@ struct PosixConfig::Key
     bool operator==(const Key & other) const;
 };
 
-inline bool PosixConfig::Key::operator==(const Key & other) const
+inline bool AndroidConfig::Key::operator==(const Key & other) const
 {
     return strcmp(Namespace, other.Namespace) == 0 && strcmp(Name, other.Name) == 0;
 }

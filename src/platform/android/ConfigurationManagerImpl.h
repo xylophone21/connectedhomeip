@@ -23,10 +23,11 @@
 
 #pragma once
 
-#include "platform/internal/DeviceNetworkInfo.h"
+#include <platform/internal/DeviceNetworkInfo.h>
 #include <platform/internal/GenericConfigurationManagerImpl.h>
+#include <platform/android/AndroidConfig.h>
 
-#include <platform/android/PosixConfig.h>
+#include <jni.h>
 
 namespace chip {
 namespace DeviceLayer {
@@ -36,7 +37,7 @@ namespace DeviceLayer {
  */
 class ConfigurationManagerImpl final : public ConfigurationManager,
                                        public Internal::GenericConfigurationManagerImpl<ConfigurationManagerImpl>,
-                                       private Internal::PosixConfig
+                                       private Internal::AndroidConfig
 {
     // Allow the ConfigurationManager interface class to delegate method calls to
     // the implementation methods provided by this class.
@@ -47,6 +48,9 @@ class ConfigurationManagerImpl final : public ConfigurationManager,
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
     friend class Internal::GenericConfigurationManagerImpl<ConfigurationManagerImpl>;
 #endif
+
+public:
+    void InitializeWithObject(jobject managerObject);
 
 private:
     // ===== Members that implement the ConfigurationManager public interface.
@@ -75,6 +79,8 @@ private:
     // ===== Private members reserved for use by this class only.
 
     static void DoFactoryReset(intptr_t arg);
+
+    jobject mConfigurationManagerObject = nullptr;
 };
 
 /**

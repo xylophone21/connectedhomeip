@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <support/JniReferences.h>
 
 #include <jni.h>
@@ -80,6 +81,26 @@ public:
 private:
     JNIEnv * mEnv;
     jstring mData;
+};
+
+/// warp a byte array as a jin byte array
+class ByteArray
+{
+public:
+    ByteArray(JNIEnv * env, const jbyte * data, jsize dataLen) : mEnv(env)
+     { 
+         mArray = data != nullptr ? mEnv->NewByteArray(dataLen) : nullptr; 
+         if(mArray != nullptr) {
+             env->SetByteArrayRegion(mArray, 0, dataLen, data);
+         }
+     }
+    ~ByteArray() { mEnv->DeleteLocalRef(mArray); }
+
+    jbyteArray jniValue() { return mArray; }
+
+private:
+    JNIEnv * mEnv;
+    jbyteArray mArray;
 };
 
 /// Manages an pre-existing global reference to a jclass.

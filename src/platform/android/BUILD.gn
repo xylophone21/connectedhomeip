@@ -40,8 +40,8 @@ static_library("android") {
     "KeyValueStoreManagerImpl.h",
     "PlatformManagerImpl.cpp",
     "PlatformManagerImpl.h",
-    "PosixConfig.cpp",
-    "PosixConfig.h",
+    "AndroidConfig.cpp",
+    "AndroidConfig.h",
     "MdnsImpl.cpp",
     "MdnsImpl.h",
     "AndroidChipPlatform-JNI.cpp",
@@ -74,6 +74,8 @@ android_library("java") {
     "java/chip/platform/BLEConnection.java",
     "java/chip/platform/KeyValueStoreManager.java",
     "java/chip/platform/PreferencesKeyValueStoreManager.java",
+    "java/chip/platform/ConfigurationManager.java",
+    "java/chip/platform/DefaultConfigurationManager.java"
   ]
 
   javac_flags = [ "-Xlint:deprecation" ]

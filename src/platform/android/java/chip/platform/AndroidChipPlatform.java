@@ -66,4 +66,7 @@ public final class AndroidChipPlatform {
 
   //for KeyValueStoreManager
   public native void setKeyValueStoreManager(KeyValueStoreManager manager);
+
+  //for ConfigurationManager
+  public native void setConfigurationManager(ConfigurationManager manager);
 }

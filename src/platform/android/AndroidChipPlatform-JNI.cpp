@@ -30,6 +30,9 @@
 #include <platform/ConnectivityManager.h>
 #include <platform/internal/BLEManager.h>
 #include <platform/KeyValueStoreManager.h>
+#include <platform/ConnectivityManager.h>
+#include <platform/CHIPDeviceConfig.h>
+#include <platform/ConfigurationManager.h>
 #include <support/CHIPMem.h>
 
 #include "BLEManagerImpl.h"
@@ -189,6 +192,13 @@ JNI_METHOD(void, setKeyValueStoreManager)(JNIEnv * env, jclass self, jobject man
 {
     StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
     chip::DeviceLayer::PersistedStorage::KeyValueStoreMgrImpl().InitializeWithObject(manager);
+}
+
+//for ConfigurationManager
+JNI_METHOD(void, setConfigurationManager)(JNIEnv * env, jclass self, jobject manager)
+{
+    StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
+    chip::DeviceLayer::ConfigurationMgrImpl().InitializeWithObject(manager);
 }
 
 void ThrowError(JNIEnv * env, CHIP_ERROR errToThrow)
