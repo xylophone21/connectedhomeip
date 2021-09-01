@@ -434,7 +434,7 @@ CHIP_ERROR AndroidConfig::ClearNamespace(const char * ns)
 
 CHIP_ERROR AndroidConfig::FactoryResetConfig()
 {
-    const AndroidConfig::Key key = { nullptr, nullptr };
+    const AndroidConfig::Key key = { AndroidConfig::kConfigNamespace_ChipConfig, nullptr };
     return AndroidConfig::ClearConfigValue(key);
 }
 
