@@ -208,8 +208,12 @@ CHIP_ERROR GenericPlatformManagerImpl_POSIX<ImplClass>::_StartEventLoopTask()
     VerifyOrReturnError(err == 0, System::MapErrorPOSIX(err));
     err = pthread_attr_getschedparam(&mChipTaskAttr, &mChipTaskSchedParam);
     VerifyOrReturnError(err == 0, System::MapErrorPOSIX(err));
+
+#if CHIP_DEVICE_CONFIG_RUN_AS_ROOT
+    // set SCHED_RR need root/admin on Android
     err = pthread_attr_setschedpolicy(&mChipTaskAttr, SCHED_RR);
     VerifyOrReturnError(err == 0, System::MapErrorPOSIX(err));
+#endif
 
     //
     // We need to grab the lock here since we have to protect setting

@@ -45,6 +45,8 @@ static_library("android") {
     "MdnsImpl.cpp",
     "MdnsImpl.h",
     "AndroidChipPlatform-JNI.cpp",
+    "../DeviceSafeQueue.cpp",
+    "../DeviceSafeQueue.h",
   ]
 
   deps = [ 

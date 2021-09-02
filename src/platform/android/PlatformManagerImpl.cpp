@@ -19,15 +19,17 @@
 /**
  *    @file
  *          Provides an implementation of the PlatformManager object
- *          for Darwin platforms.
+ *          for Android platforms.
  */
 
 #include <platform/internal/CHIPDeviceLayerInternal.h>
 
 #include <platform/PlatformManager.h>
+#include <platform/internal/GenericPlatformManagerImpl_POSIX.cpp>
+#include <support/CHIPMem.h>
+#include <support/logging/CHIPLogging.h>
 
-// Include the non-inline definitions for the GenericPlatformManagerImpl<> template,
-#include <platform/internal/GenericPlatformManagerImpl.cpp>
+#include <thread>
 
 namespace chip {
 namespace DeviceLayer {
@@ -36,34 +38,19 @@ PlatformManagerImpl PlatformManagerImpl::sInstance;
 
 CHIP_ERROR PlatformManagerImpl::_InitChipStack()
 {
-    return CHIP_ERROR_NOT_IMPLEMENTED;
-}
+    CHIP_ERROR err;
 
-CHIP_ERROR PlatformManagerImpl::_StartEventLoopTask()
-{
-    return CHIP_ERROR_NOT_IMPLEMENTED;
-};
+    // Initialize the configuration system.
+    err = Internal::AndroidConfig::Init();
+    SuccessOrExit(err);
 
-CHIP_ERROR PlatformManagerImpl::_StopEventLoopTask()
-{
-    return CHIP_ERROR_NOT_IMPLEMENTED;
-}
+    // Call _InitChipStack() on the generic implementation base class
+    // to finish the initialization process.
+    err = Internal::GenericPlatformManagerImpl_POSIX<PlatformManagerImpl>::_InitChipStack();
+    SuccessOrExit(err);
 
-void PlatformManagerImpl::_RunEventLoop()
-{
-    return;
-}
-
-CHIP_ERROR PlatformManagerImpl::_Shutdown()
-{
-    // Call up to the base class _Shutdown() to perform the bulk of the shutdown.
-    // return GenericPlatformManagerImpl<ImplClass>::_Shutdown();
-    return CHIP_ERROR_NOT_IMPLEMENTED;
-}
-
-void PlatformManagerImpl::_PostEvent(const ChipDeviceEvent * event)
-{
-    return;
+exit:
+    return err;
 }
 
 } // namespace DeviceLayer

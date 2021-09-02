@@ -23,50 +23,45 @@
 
 #pragma once
 
-#include <platform/internal/GenericPlatformManagerImpl.h>
+#include <platform/PlatformManager.h>
+#include <platform/internal/GenericPlatformManagerImpl_POSIX.h>
+
 
 namespace chip {
 namespace DeviceLayer {
 
 /**
- * Concrete implementation of the PlatformManager singleton object for Darwin platforms.
+ * Concrete implementation of the PlatformManager singleton object for Android platforms.
  */
-class PlatformManagerImpl final : public PlatformManager, public Internal::GenericPlatformManagerImpl<PlatformManagerImpl>
+class PlatformManagerImpl final : public PlatformManager, public Internal::GenericPlatformManagerImpl_POSIX<PlatformManagerImpl>
 {
     // Allow the PlatformManager interface class to delegate method calls to
     // the implementation methods provided by this class.
     friend PlatformManager;
 
+    // Allow the generic implementation base class to call helper methods on
+    // this class.
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+    friend Internal::GenericPlatformManagerImpl_POSIX<PlatformManagerImpl>;
+#endif
+
 public:
     // ===== Platform-specific members that may be accessed directly by the application.
+    //Post SystemEvent from Java, like WiFIIPChangeListener in Linux Platform
+    //void PostJavaEvent();
 
 private:
     // ===== Methods that implement the PlatformManager abstract interface.
+
     CHIP_ERROR _InitChipStack();
-    CHIP_ERROR _Shutdown();
-
-    CHIP_ERROR _StartChipTimer(int64_t aMilliseconds) { return CHIP_ERROR_NOT_IMPLEMENTED; };
-    CHIP_ERROR _StartEventLoopTask();
-    CHIP_ERROR _StopEventLoopTask();
-    void _RunEventLoop();
-    void _LockChipStack(){};
-    bool _TryLockChipStack() { return false; };
-    void _UnlockChipStack(){};
-    void _PostEvent(const ChipDeviceEvent * event);
-
-#if CHIP_STACK_LOCK_TRACKING_ENABLED
-    bool _IsChipStackLockedByCurrentThread() const { return false; };
-#endif
 
     // ===== Members for internal use by the following friends.
 
-    friend PlatformManager & PlatformMgr(void);
-    friend PlatformManagerImpl & PlatformMgrImpl(void);
+    friend PlatformManager & PlatformMgr();
+    friend PlatformManagerImpl & PlatformMgrImpl();
     friend class Internal::BLEManagerImpl;
 
     static PlatformManagerImpl sInstance;
-
-    inline ImplClass * Impl() { return static_cast<PlatformManagerImpl *>(this); }
 };
 
 /**
@@ -75,7 +70,7 @@ private:
  * chip applications should use this to access features of the PlatformManager object
  * that are common to all platforms.
  */
-inline PlatformManager & PlatformMgr(void)
+inline PlatformManager & PlatformMgr()
 {
     return PlatformManagerImpl::sInstance;
 }
@@ -86,7 +81,7 @@ inline PlatformManager & PlatformMgr(void)
  * chip applications can use this to gain access to features of the PlatformManager
  * that are specific to the ESP32 platform.
  */
-inline PlatformManagerImpl & PlatformMgrImpl(void)
+inline PlatformManagerImpl & PlatformMgrImpl()
 {
     return PlatformManagerImpl::sInstance;
 }

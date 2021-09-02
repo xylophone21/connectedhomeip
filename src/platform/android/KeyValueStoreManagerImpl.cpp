@@ -80,9 +80,9 @@ void KeyValueStoreManagerImpl::InitializeWithObject(jobject manager)
 CHIP_ERROR KeyValueStoreManagerImpl::_Get(const char * key, void * value, size_t value_size, size_t * read_bytes_size,
                                           size_t offset_bytes)
 {
+    CHIP_ERROR err = CHIP_NO_ERROR;
     ReturnErrorCodeIf(mKeyValueStoreManagerObject == nullptr, CHIP_ERROR_INCORRECT_STATE);
     ReturnErrorCodeIf(mGetMethod == nullptr, CHIP_ERROR_INCORRECT_STATE);
-    ReturnErrorCodeIf(offset_bytes != 0, CHIP_ERROR_INVALID_ARGUMENT);
 
     JNIEnv * env = JniReferences::GetInstance().GetEnvForCurrentThread();
     ReturnErrorCodeIf(env == nullptr, CHIP_JNI_ERROR_NO_ENV);
@@ -100,7 +100,7 @@ CHIP_ERROR KeyValueStoreManagerImpl::_Get(const char * key, void * value, size_t
 
     if (javaValue == nullptr)
     {
-        return CHIP_ERROR_KEY_NOT_FOUND;
+        return CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND;
     }
 
     chip::JniUtfString utfValue(env, (jstring) javaValue);
@@ -119,18 +119,23 @@ CHIP_ERROR KeyValueStoreManagerImpl::_Get(const char * key, void * value, size_t
         ChipLogError(DeviceLayer, "KeyValueStoreManager base64 decoding failed");
         return CHIP_ERROR_INTEGRITY_CHECK_FAILED;
     }
+    ReturnErrorCodeIf(offset_bytes >= decodedLength, CHIP_ERROR_INVALID_ARGUMENT);
+    size_t read_size = std::min<size_t>(value_size, decodedLength - offset_bytes);
+    if(value_size + offset_bytes < decodedLength) {
+        err = CHIP_ERROR_BUFFER_TOO_SMALL;
+    }
 
     if (read_bytes_size != nullptr)
     {
-        *read_bytes_size = decodedLength;
+        *read_bytes_size = read_size;
     }
 
     if (value != nullptr)
     {
-        memcpy(value, buffer.get(), std::min<size_t>(value_size, decodedLength));
+        memcpy(value, buffer.get() + offset_bytes, read_size);
     }
 
-    return CHIP_NO_ERROR;
+    return err;
 }
 
 CHIP_ERROR KeyValueStoreManagerImpl::_Put(const char * key, const void * value, size_t value_size)

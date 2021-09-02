@@ -228,7 +228,7 @@ ConnectivityManagerImpl ConnectivityManagerImpl::sInstance;
 
 CHIP_ERROR ConnectivityManagerImpl::_Init()
 {
-    return CHIP_ERROR_NOT_IMPLEMENTED;
+    return CHIP_NO_ERROR;
 }
 
 void ConnectivityManagerImpl::_OnPlatformEvent(const ChipDeviceEvent * event)

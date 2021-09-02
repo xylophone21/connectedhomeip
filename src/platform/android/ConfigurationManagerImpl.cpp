@@ -59,7 +59,7 @@ void ConfigurationManagerImpl::InitializeWithObject(jobject managerObject)
 
 CHIP_ERROR ConfigurationManagerImpl::_Init()
 {
-    return CHIP_ERROR_NOT_IMPLEMENTED;
+    return CHIP_NO_ERROR;
 }
 
 CHIP_ERROR ConfigurationManagerImpl::_GetPrimaryWiFiMACAddress(uint8_t * buf)
