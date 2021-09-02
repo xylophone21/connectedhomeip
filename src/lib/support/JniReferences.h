@@ -79,7 +79,7 @@ public:
 private:
     JniReferences() {}
 
-    pthread_mutex_t mStackLock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+    pthread_mutex_t mStackLock = PTHREAD_MUTEX_INITIALIZER;
     JavaVM * mJvm              = nullptr;
     jobject mClassLoader       = nullptr;
     jmethodID mFindClassMethod = nullptr;

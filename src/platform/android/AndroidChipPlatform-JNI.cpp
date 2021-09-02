@@ -84,7 +84,6 @@ exit:
     if (err != CHIP_NO_ERROR)
     {
         ThrowError(env, err);
-        StackUnlockGuard unlockGuard(JniReferences::GetInstance().GetStackLock());
         JNI_OnUnload(jvm, reserved);
     }
 
@@ -93,9 +92,7 @@ exit:
 
 void AndroidChipPlatformJNI_OnUnload(JavaVM * jvm, void * reserved)
 {
-    StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
     ChipLogProgress(DeviceLayer, "AndroidChipPlatform JNI_OnUnload() called");
-
     chip::Platform::MemoryShutdown();
 }
 
@@ -109,7 +106,6 @@ JNI_METHOD(void,nativeSetBLEManager)(JNIEnv *, jobject, jobject manager)
 JNI_METHOD(void, handleWriteConfirmation)
 (JNIEnv * env, jobject self, jint conn, jbyteArray svcId, jbyteArray charId)
 {
-    StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
     BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
 
     chip::Ble::ChipBleUUID svcUUID;
@@ -125,7 +121,6 @@ JNI_METHOD(void, handleWriteConfirmation)
 JNI_METHOD(void, handleIndicationReceived)
 (JNIEnv * env, jobject self, jint conn, jbyteArray svcId, jbyteArray charId, jbyteArray value)
 {
-    StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
     BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
     const auto valueBegin               = env->GetByteArrayElements(value, nullptr);
     const auto valueLength              = env->GetArrayLength(value);
@@ -150,7 +145,6 @@ exit:
 JNI_METHOD(void, handleSubscribeComplete)
 (JNIEnv * env, jobject self, jint conn, jbyteArray svcId, jbyteArray charId)
 {
-    StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
     BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
 
     chip::Ble::ChipBleUUID svcUUID;
@@ -166,7 +160,6 @@ JNI_METHOD(void, handleSubscribeComplete)
 JNI_METHOD(void, handleUnsubscribeComplete)
 (JNIEnv * env, jobject self, jint conn, jbyteArray svcId, jbyteArray charId)
 {
-    StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
     BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
 
     chip::Ble::ChipBleUUID svcUUID;
@@ -181,7 +174,6 @@ JNI_METHOD(void, handleUnsubscribeComplete)
 
 JNI_METHOD(void, handleConnectionError)(JNIEnv * env, jobject self, jint conn)
 {
-    StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
     BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
 
     chip::DeviceLayer::Internal::BLEMgrImpl().HandleConnectionError(connObj, BLE_ERROR_APP_CLOSED_CONNECTION);

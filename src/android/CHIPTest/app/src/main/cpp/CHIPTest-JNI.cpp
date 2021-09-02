@@ -51,7 +51,6 @@ jint JNI_OnLoad(JavaVM *jvm, void * reserved)
 {
     CHIP_ERROR err = CHIP_NO_ERROR;
     JNIEnv * env;
-
     ChipLogProgress(Test, "JNI_OnLoad() called");
 
     // Save a reference to the JVM.  Will need this to call back into Java.
@@ -80,7 +79,6 @@ exit:
     if (err != CHIP_NO_ERROR)
     {
         ThrowError(env, err);
-        StackUnlockGuard unlockGuard(JniReferences::GetInstance().GetStackLock());
         JNI_OnUnload(jvm, reserved);
     }
 
@@ -89,7 +87,6 @@ exit:
 
 void JNI_OnUnload(JavaVM * jvm, void * reserved)
 {
-    StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
     ChipLogProgress(Test, "JNI_OnUnload() called");
 
     AndroidChipPlatformJNI_OnUnload(jvm, reserved);
@@ -201,10 +198,7 @@ static void onLog(const char* fmt, ...)
     ChipLogProgress(Test, "Calling Java onTestLog");
 
     env->ExceptionClear();
-    {
-        StackUnlockGuard unlockGuard(JniReferences::GetInstance().GetStackLock());
-        env->CallStaticVoidMethod(sTestEngineCls, method, strObj);
-    }
+    env->CallStaticVoidMethod(sTestEngineCls, method, strObj);
     VerifyOrExit(!env->ExceptionCheck(), err = CHIP_JNI_ERROR_EXCEPTION_THROWN);
 
 exit:
@@ -269,8 +263,6 @@ static nl_test_output_logger_t jni_test_logger = {
 
 extern "C" JNIEXPORT jint Java_com_tcl_chip_chiptest_TestEngine_runTest(JNIEnv *env, jclass clazz)
 {
-    CHIP_ERROR err = CHIP_NO_ERROR;
-
     nlTestSetLogger(&jni_test_logger);
 
     jint ret = RunRegisteredUnitTests();
