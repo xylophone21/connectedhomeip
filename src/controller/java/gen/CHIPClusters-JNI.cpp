@@ -20,10 +20,10 @@
 #include "gen/CHIPClientCallbacks.h"
 #include "gen/CHIPClusters.h"
 
-#include <controller/java/CHIPJNIError.h>
-#include <controller/java/JniReferences.h>
-#include <controller/java/JniTypeWrappers.h>
-#include <controller/java/StackLock.h>
+#include <support/CHIPJNIError.h>
+#include <support/JniReferences.h>
+#include <support/JniTypeWrappers.h>
+#include <support/StackLock.h>
 #include <core/CHIPSafeCasts.h>
 #include <jni.h>
 #include <lib/support/Span.h>

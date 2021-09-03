@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2020 Project CHIP Authors
+ *   Copyright (c) 2021 Project CHIP Authors
  *   All rights reserved.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,19 +15,8 @@
  *   limitations under the License.
  *
  */
+package chip.platform;
 
-#include <ble/BleLayer.h>
-#include <controller/java/AndroidBleConnectionDelegate.h>
-
-void AndroidBleConnectionDelegate::NewConnection(chip::Ble::BleLayer * bleLayer, void * appState, const uint16_t connDiscriminator)
-{
-    if (newConnectionCb)
-    {
-        newConnectionCb(bleLayer->mAppState, connDiscriminator);
-    }
-}
-
-CHIP_ERROR AndroidBleConnectionDelegate::CancelConnection()
-{
-    return CHIP_ERROR_NOT_IMPLEMENTED;
+public interface ServiceResolver {
+  void resolve(String instanceName, String serviceType, long callbackHandle, long contextHandle);
 }

@@ -36,6 +36,7 @@
 #include <support/CHIPMem.h>
 
 #include "BLEManagerImpl.h"
+#include "MdnsImpl.h"
 #include "AndroidChipPlatform-JNI.h"
 
 using namespace chip;
@@ -191,6 +192,20 @@ JNI_METHOD(void, setConfigurationManager)(JNIEnv * env, jclass self, jobject man
 {
     StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
     chip::DeviceLayer::ConfigurationMgrImpl().InitializeWithObject(manager);
+}
+
+//for ServiceResolver
+JNI_METHOD(void, setServiceResolver)(JNIEnv * env, jclass self, jobject resolver)
+{
+    StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
+    chip::Mdns::InitializeWithObject(resolver);
+}
+
+JNI_METHOD(void, handleServiceResolve)
+(JNIEnv * env, jclass self, jstring instanceName, jstring serviceType, jstring address, jint port, jlong callbackHandle,
+ jlong contextHandle)
+{
+    chip::Mdns::HandleResolve(instanceName, serviceType, address, port, callbackHandle, contextHandle);
 }
 
 void ThrowError(JNIEnv * env, CHIP_ERROR errToThrow)

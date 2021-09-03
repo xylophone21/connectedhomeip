@@ -17,9 +17,10 @@
 
 #include "MdnsImpl.h"
 
-// #include "CHIPJNIError.h"
-// #include "JniReferences.h"
-// #include "JniTypeWrappers.h"
+#include <jni.h>
+#include <support/CHIPJNIError.h>
+#include <support/JniReferences.h>
+#include <support/JniTypeWrappers.h>
 
 #include <lib/mdns/platform/Mdns.h>
 #include <support/CHIPMemString.h>
@@ -35,14 +36,18 @@ namespace Mdns {
 using namespace chip::Platform;
 
 namespace {
-// jobject sResolverObject  = nullptr;
-// jmethodID sResolveMethod = nullptr;
+jobject sResolverObject  = nullptr;
+jmethodID sResolveMethod = nullptr;
 } // namespace
 
 // Implemention of functions declared in lib/mdns/platform/Mdns.h
 
 CHIP_ERROR ChipMdnsInit(MdnsAsyncReturnCallback initCallback, MdnsAsyncReturnCallback errorCallback, void * context)
 {
+    VerifyOrReturnError(initCallback != nullptr, CHIP_ERROR_INVALID_ARGUMENT);
+    VerifyOrReturnError(errorCallback != nullptr, CHIP_ERROR_INVALID_ARGUMENT);
+
+    initCallback(context, CHIP_NO_ERROR);
     return CHIP_NO_ERROR;
 }
 
@@ -70,27 +75,27 @@ CHIP_ERROR ChipMdnsBrowse(const char * type, MdnsServiceProtocol protocol, Inet:
 
 CHIP_ERROR ChipMdnsResolve(MdnsService * service, Inet::InterfaceId interface, MdnsResolveCallback callback, void * context)
 {
-    // VerifyOrReturnError(service != nullptr && callback != nullptr, CHIP_ERROR_INVALID_ARGUMENT);
-    // VerifyOrReturnError(sResolverObject != nullptr && sResolveMethod != nullptr, CHIP_ERROR_INCORRECT_STATE);
+    VerifyOrReturnError(service != nullptr && callback != nullptr, CHIP_ERROR_INVALID_ARGUMENT);
+    VerifyOrReturnError(sResolverObject != nullptr && sResolveMethod != nullptr, CHIP_ERROR_INCORRECT_STATE);
 
-    // std::string serviceType = service->mType;
-    // serviceType += '.';
-    // serviceType += (service->mProtocol == MdnsServiceProtocol::kMdnsProtocolUdp ? "_udp" : "_tcp");
+    std::string serviceType = service->mType;
+    serviceType += '.';
+    serviceType += (service->mProtocol == MdnsServiceProtocol::kMdnsProtocolUdp ? "_udp" : "_tcp");
 
-    // JNIEnv * env = JniReferences::GetInstance().GetEnvForCurrentThread();
-    // UtfString jniInstanceName(env, service->mName);
-    // UtfString jniServiceType(env, serviceType.c_str());
+    JNIEnv * env = JniReferences::GetInstance().GetEnvForCurrentThread();
+    UtfString jniInstanceName(env, service->mName);
+    UtfString jniServiceType(env, serviceType.c_str());
 
-    // env->CallVoidMethod(sResolverObject, sResolveMethod, jniInstanceName.jniValue(), jniServiceType.jniValue(),
-    //                     reinterpret_cast<jlong>(callback), reinterpret_cast<jlong>(context));
+    env->CallVoidMethod(sResolverObject, sResolveMethod, jniInstanceName.jniValue(), jniServiceType.jniValue(),
+                        reinterpret_cast<jlong>(callback), reinterpret_cast<jlong>(context));
 
-    // if (env->ExceptionCheck())
-    // {
-    //     ChipLogError(Discovery, "Java exception in ChipMdnsResolve");
-    //     env->ExceptionDescribe();
-    //     env->ExceptionClear();
-    //     return CHIP_JNI_ERROR_EXCEPTION_THROWN;
-    // }
+    if (env->ExceptionCheck())
+    {
+        ChipLogError(Discovery, "Java exception in ChipMdnsResolve");
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+        return CHIP_JNI_ERROR_EXCEPTION_THROWN;
+    }
 
     return CHIP_NO_ERROR;
 }
@@ -104,50 +109,50 @@ void HandleMdnsTimeout() {}
 
 void InitializeWithObject(jobject resolverObject)
 {
-    // JNIEnv * env         = JniReferences::GetInstance().GetEnvForCurrentThread();
-    // sResolverObject      = env->NewGlobalRef(resolverObject);
-    // jclass resolverClass = env->GetObjectClass(sResolverObject);
+    JNIEnv * env         = JniReferences::GetInstance().GetEnvForCurrentThread();
+    sResolverObject      = env->NewGlobalRef(resolverObject);
+    jclass resolverClass = env->GetObjectClass(sResolverObject);
 
-    // VerifyOrReturn(resolverClass != nullptr, ChipLogError(Discovery, "Failed to get Resolver Java class"));
+    VerifyOrReturn(resolverClass != nullptr, ChipLogError(Discovery, "Failed to get Resolver Java class"));
 
-    // sResolveMethod = env->GetMethodID(resolverClass, "resolve", "(Ljava/lang/String;Ljava/lang/String;JJ)V");
+    sResolveMethod = env->GetMethodID(resolverClass, "resolve", "(Ljava/lang/String;Ljava/lang/String;JJ)V");
 
-    // if (sResolveMethod == nullptr)
-    // {
-    //     ChipLogError(Discovery, "Failed to access Resolver 'resolve' method");
-    //     env->ExceptionClear();
-    // }
+    if (sResolveMethod == nullptr)
+    {
+        ChipLogError(Discovery, "Failed to access Resolver 'resolve' method");
+        env->ExceptionClear();
+    }
 }
 
 void HandleResolve(jstring instanceName, jstring serviceType, jstring address, jint port, jlong callbackHandle, jlong contextHandle)
 {
-    // VerifyOrReturn(callbackHandle != 0, ChipLogError(Discovery, "HandleResolve called with callback equal to nullptr"));
+    VerifyOrReturn(callbackHandle != 0, ChipLogError(Discovery, "HandleResolve called with callback equal to nullptr"));
 
-    // const auto dispatch = [callbackHandle, contextHandle](CHIP_ERROR error, MdnsService * service = nullptr) {
-    //     MdnsResolveCallback callback = reinterpret_cast<MdnsResolveCallback>(callbackHandle);
-    //     callback(reinterpret_cast<void *>(contextHandle), service, error);
-    // };
+    const auto dispatch = [callbackHandle, contextHandle](CHIP_ERROR error, MdnsService * service = nullptr) {
+        MdnsResolveCallback callback = reinterpret_cast<MdnsResolveCallback>(callbackHandle);
+        callback(reinterpret_cast<void *>(contextHandle), service, error);
+    };
 
-    // VerifyOrReturn(address != nullptr && port != 0, dispatch(CHIP_ERROR_UNKNOWN_RESOURCE_ID));
+    VerifyOrReturn(address != nullptr && port != 0, dispatch(CHIP_ERROR_UNKNOWN_RESOURCE_ID));
 
-    // JNIEnv * env = JniReferences::GetInstance().GetEnvForCurrentThread();
-    // JniUtfString jniInstanceName(env, instanceName);
-    // JniUtfString jniServiceType(env, serviceType);
-    // JniUtfString jniAddress(env, address);
-    // Inet::IPAddress ipAddress;
+    JNIEnv * env = JniReferences::GetInstance().GetEnvForCurrentThread();
+    JniUtfString jniInstanceName(env, instanceName);
+    JniUtfString jniServiceType(env, serviceType);
+    JniUtfString jniAddress(env, address);
+    Inet::IPAddress ipAddress;
 
-    // VerifyOrReturn(strlen(jniInstanceName.c_str()) <= kMdnsInstanceNameMaxSize, dispatch(CHIP_ERROR_INVALID_ARGUMENT));
-    // VerifyOrReturn(strlen(jniServiceType.c_str()) <= kMdnsTypeAndProtocolMaxSize, dispatch(CHIP_ERROR_INVALID_ARGUMENT));
-    // VerifyOrReturn(CanCastTo<uint16_t>(port), dispatch(CHIP_ERROR_INVALID_ARGUMENT));
-    // VerifyOrReturn(Inet::IPAddress::FromString(jniAddress.c_str(), ipAddress), dispatch(CHIP_ERROR_INVALID_ARGUMENT));
+    VerifyOrReturn(strlen(jniInstanceName.c_str()) <= kMdnsInstanceNameMaxSize, dispatch(CHIP_ERROR_INVALID_ARGUMENT));
+    VerifyOrReturn(strlen(jniServiceType.c_str()) <= kMdnsTypeAndProtocolMaxSize, dispatch(CHIP_ERROR_INVALID_ARGUMENT));
+    VerifyOrReturn(CanCastTo<uint16_t>(port), dispatch(CHIP_ERROR_INVALID_ARGUMENT));
+    VerifyOrReturn(Inet::IPAddress::FromString(jniAddress.c_str(), ipAddress), dispatch(CHIP_ERROR_INVALID_ARGUMENT));
 
-    // MdnsService service = {};
-    // CopyString(service.mName, jniInstanceName.c_str());
-    // CopyString(service.mType, jniServiceType.c_str());
-    // service.mAddress.SetValue(ipAddress);
-    // service.mPort = static_cast<uint16_t>(port);
+    MdnsService service = {};
+    CopyString(service.mName, jniInstanceName.c_str());
+    CopyString(service.mType, jniServiceType.c_str());
+    service.mAddress.SetValue(ipAddress);
+    service.mPort = static_cast<uint16_t>(port);
 
-    // dispatch(CHIP_NO_ERROR, &service);
+    dispatch(CHIP_NO_ERROR, &service);
 }
 
 } // namespace Mdns

@@ -17,7 +17,7 @@
  */
 #pragma once
 
-#include "JniReferences.h"
+#include <support/JniReferences.h>
 
 #include <memory>
 

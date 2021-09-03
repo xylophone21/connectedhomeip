@@ -22,27 +22,12 @@ shared_library("jni") {
   output_name = "libCHIPController"
 
   sources = [
-#    "AndroidBleApplicationDelegate.cpp",
-#    "AndroidBleApplicationDelegate.h",
-#    "AndroidBleConnectionDelegate.cpp",
-#    "AndroidBleConnectionDelegate.h",
-#    "AndroidBlePlatformDelegate.cpp",
-#    "AndroidBlePlatformDelegate.h",
     "AndroidCallbacks-JNI.cpp",
     "AndroidCallbacks.cpp",
     "AndroidCallbacks.h",
     "AndroidDeviceControllerWrapper.cpp",
     "AndroidDeviceControllerWrapper.h",
-#    "AndroidKeyValueStoreManagerImpl.cpp",
-#    "AndroidKeyValueStoreManagerImpl.h",
     "CHIPDeviceController-JNI.cpp",
-    "CHIPJNIError.h",
-    "JniReferences.cpp",
-    "JniReferences.h",
-    "JniTypeWrappers.h",
-#    "MdnsImpl.cpp",
-#    "MdnsImpl.h",
-    "StackLock.h",
     "gen/CHIPClusters-JNI.cpp",
   ]
 
