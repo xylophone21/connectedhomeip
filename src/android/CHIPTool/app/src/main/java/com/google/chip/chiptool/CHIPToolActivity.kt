@@ -27,7 +27,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import chip.devicecontroller.ChipDeviceController
-import chip.devicecontroller.NsdManagerServiceResolver
 import chip.setuppayload.SetupPayloadParser.UnrecognizedQrCodeException
 import com.google.chip.chiptool.attestation.AttestationTestFragment
 import com.google.chip.chiptool.echoclient.EchoClientFragment
@@ -36,7 +35,10 @@ import com.google.chip.chiptool.provisioning.ProvisionNetworkType
 import com.google.chip.chiptool.setuppayloadscanner.BarcodeFragment
 import com.google.chip.chiptool.setuppayloadscanner.CHIPDeviceDetailsFragment
 import com.google.chip.chiptool.setuppayloadscanner.CHIPDeviceInfo
-import chip.devicecontroller.PreferencesKeyValueStoreManager
+import chip.platform.AndroidBLEManager
+import chip.platform.AndroidChipPlatform
+import chip.platform.DefaultConfigurationManager
+import chip.platform.NsdManagerServiceResolver
 import chip.setuppayload.SetupPayload
 import chip.setuppayload.SetupPayloadParser
 import com.google.chip.chiptool.clusterclient.OnOffClientFragment
@@ -55,8 +57,11 @@ class CHIPToolActivity :
     setContentView(R.layout.top_activity)
 
     if (savedInstanceState == null) {
-      ChipDeviceController.setKeyValueStoreManager(PreferencesKeyValueStoreManager(this))
-      ChipDeviceController.setServiceResolver(NsdManagerServiceResolver(this))
+      ChipDeviceController.load()
+      AndroidChipPlatform.getInstance().setConfigurationManager(DefaultConfigurationManager(this))
+      AndroidChipPlatform.getInstance().setKeyValueStoreManager(chip.platform.PreferencesKeyValueStoreManager(this))
+      AndroidChipPlatform.getInstance().setServiceResolver(NsdManagerServiceResolver(this))
+      AndroidChipPlatform.getInstance().bleManager = AndroidBLEManager()
       val fragment = SelectActionFragment.newInstance()
       supportFragmentManager
           .beginTransaction()

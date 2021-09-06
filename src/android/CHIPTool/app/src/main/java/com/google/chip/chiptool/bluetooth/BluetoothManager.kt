@@ -11,6 +11,7 @@ import android.util.Log
 import chip.platform.AndroidBLEManager
 import chip.platform.AndroidChipPlatform
 import chip.platform.BLEConnection
+import com.google.chip.chiptool.provisioning.DeviceProvisioningFragment
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
@@ -26,9 +27,7 @@ class BluetoothManager : BLEConnection {
   private val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
   private var bleGatt: BluetoothGatt? = null
   var connectionId = 0
-    get() {
-      return connectionId
-    }
+    private set
 
   private fun getServiceData(discriminator: Int): ByteArray {
     val opcode = 0
@@ -40,12 +39,10 @@ class BluetoothManager : BLEConnection {
   }
 
   suspend fun getBluetoothDevice(discriminator: Int): BluetoothDevice? {
-
     if (! bluetoothAdapter.isEnabled) {
       bluetoothAdapter.enable();
     }
 
-    AndroidChipPlatform.getInstance().bleManager = AndroidBLEManager()
     connectionId = AndroidChipPlatform.getInstance().bleManager.addConnection(this)
 
     val scanner = bluetoothAdapter.bluetoothLeScanner ?: run {
@@ -111,6 +108,7 @@ class BluetoothManager : BLEConnection {
           newState: Int
       ) {
         super.onConnectionStateChange(gatt, status, newState)
+        Log.i(TAG, "${gatt?.device?.name}.onConnectionStateChange status = $status, newState=$newState")
         wrappedCallback.onConnectionStateChange(gatt, status, newState)
 
         if (newState == BluetoothProfile.STATE_CONNECTED && status == BluetoothGatt.GATT_SUCCESS) {
@@ -120,6 +118,7 @@ class BluetoothManager : BLEConnection {
       }
 
       override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
+        Log.d(TAG, "${gatt?.device?.name}.onServicesDiscovered status = $status")
         wrappedCallback.onServicesDiscovered(gatt, status)
 
         Log.i("$TAG|onServicesDiscovered", "Services Discovered")
@@ -127,10 +126,9 @@ class BluetoothManager : BLEConnection {
       }
 
       override fun onMtuChanged(gatt: BluetoothGatt?, mtu: Int, status: Int) {
+        Log.d(TAG, "${gatt?.device?.name}.onMtuChanged: connecting to CHIP device")
         super.onMtuChanged(gatt, mtu, status)
         wrappedCallback.onMtuChanged(gatt, mtu, status)
-
-        Log.d(TAG, "MTU changed: connecting to CHIP device")
         if (coroutineContinuation.isActive) {
           coroutineContinuation.resume(gatt)
         }
@@ -206,9 +204,11 @@ class BluetoothManager : BLEConnection {
     AndroidChipPlatform.getInstance().bleManager.removeConnection(connectionId)
     connectionId = 0
     //todo: notify DeviceProvisiongFragment
+    Log.d(TAG, "onCloseBleComplete")
   }
 
   override fun onNotifyChipConnectionClosed(connId: Int) {
+    Log.d(TAG, "onNotifyChipConnectionClosed")
     onCloseBleComplete(connId)
   }
 }

@@ -29,6 +29,11 @@ public class ChipDeviceController {
   private int connectionId;
   private CompletionListener completionListener;
 
+  /** To load class and jni */
+  public static void load() {
+    return;
+  }
+
   public ChipDeviceController() {
     deviceControllerPtr = newDeviceController();
   }

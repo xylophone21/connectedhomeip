@@ -101,7 +101,6 @@ class DeviceProvisioningFragment : Fragment() {
 
       showMessage(R.string.rendezvous_over_ble_pairing_text)
       deviceController.setCompletionListener(ConnectionCallback())
-      AndroidChipPlatform.getInstance().bleManager.addConnection(BLECallback())
 
       val deviceId = DeviceIdUtil.getNextAvailableId(requireContext())
       var connId = bluetoothManager.connectionId
@@ -113,7 +112,9 @@ class DeviceProvisioningFragment : Fragment() {
   private fun showMessage(msgResId: Int, stringArgs: String? = null) {
     requireActivity().runOnUiThread {
       val context = requireContext()
-      Toast.makeText(context, context.getString(msgResId, stringArgs), Toast.LENGTH_SHORT)
+      var msg = context.getString(msgResId, stringArgs)
+      Log.i(TAG, "showMessage:$msg")
+      Toast.makeText(context, msg, Toast.LENGTH_SHORT)
         .show()
     }
   }
@@ -169,19 +170,6 @@ class DeviceProvisioningFragment : Fragment() {
   interface Callback {
     /** Notifies that commissioning has been completed. */
     fun onCommissioningComplete(code: Int)
-  }
-
-  inner class BLECallback : BLEConnection {
-    override fun getBluetoothGatt(): BluetoothGatt? {
-      return null;
-    }
-
-    override fun onCloseBleComplete(connId: Int) {
-      Log.d(TAG, "onCloseBleComplete")
-    }
-
-    override fun onNotifyChipConnectionClosed(connId: Int) {
-    }
   }
 
   companion object {

@@ -77,7 +77,7 @@ public class NsdManagerServiceResolver implements ServiceResolver {
             Log.w(
                 TAG,
                 "Failed to resolve service '" + serviceInfo.getServiceName() + "': " + errorCode);
-            AndroidChipPlatform.handleServiceResolve(
+            AndroidChipPlatform.getInstance().handleServiceResolve(
                 instanceName, serviceType, null, 0, callbackHandle, contextHandle);
 
             if (multicastLock.isHeld()) {
@@ -95,7 +95,7 @@ public class NsdManagerServiceResolver implements ServiceResolver {
                     + "' to "
                     + serviceInfo.getHost());
             // TODO: Find out if DNS-SD results for Android should contain interface ID
-              AndroidChipPlatform.handleServiceResolve(
+              AndroidChipPlatform.getInstance().handleServiceResolve(
                 instanceName,
                 serviceType,
                 serviceInfo.getHost().getHostAddress(),

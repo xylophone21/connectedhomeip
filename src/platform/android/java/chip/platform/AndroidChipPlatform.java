@@ -71,7 +71,9 @@ public final class AndroidChipPlatform {
   public native void setConfigurationManager(ConfigurationManager manager);
 
   //for ServiceResolver
-  public static native void handleServiceResolve(
+  public native void setServiceResolver(ServiceResolver resolver);
+
+  public native void handleServiceResolve(
           String instanceName,
           String serviceType,
           String address,

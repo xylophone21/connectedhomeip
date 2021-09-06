@@ -77,7 +77,9 @@ android_library("java") {
     "java/chip/platform/KeyValueStoreManager.java",
     "java/chip/platform/PreferencesKeyValueStoreManager.java",
     "java/chip/platform/ConfigurationManager.java",
-    "java/chip/platform/DefaultConfigurationManager.java"
+    "java/chip/platform/DefaultConfigurationManager.java",
+    "java/chip/platform/ServiceResolver.java",
+    "java/chip/platform/NsdManagerServiceResolver.java",
   ]
 
   javac_flags = [ "-Xlint:deprecation" ]
