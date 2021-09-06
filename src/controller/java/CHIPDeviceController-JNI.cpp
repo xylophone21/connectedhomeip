@@ -84,7 +84,6 @@ constexpr uint32_t kZclTimeoutMs   = 10000;
 JavaVM * sJVM;
 
 pthread_t sIOThread = PTHREAD_NULL;
-bool sShutdown      = false;
 
 jclass sAndroidChipStackCls              = NULL;
 jclass sChipDeviceControllerExceptionCls = NULL;
@@ -101,7 +100,6 @@ jint JNI_OnLoad(JavaVM * jvm, void * reserved)
 {
     CHIP_ERROR err = CHIP_NO_ERROR;
     JNIEnv * env;
-    int pthreadErr = 0;
 
     ChipLogProgress(Controller, "JNI_OnLoad() called");
 
@@ -128,11 +126,6 @@ jint JNI_OnLoad(JavaVM * jvm, void * reserved)
     err = AndroidChipPlatformJNI_OnLoad(jvm, reserved);
     SuccessOrExit(err);
 
-    // Create and start the IO thread.
-    sShutdown  = false;
-    pthreadErr = pthread_create(&sIOThread, NULL, IOThreadMain, NULL);
-    VerifyOrExit(pthreadErr == 0, err = System::MapErrorPOSIX(pthreadErr));
-
 exit:
     if (err != CHIP_NO_ERROR)
     {
@@ -152,8 +145,7 @@ void JNI_OnUnload(JavaVM * jvm, void * reserved)
     // If the IO thread has been started, shut it down and wait for it to exit.
     if (sIOThread != PTHREAD_NULL)
     {
-        sShutdown = true;
-        DeviceLayer::SystemLayer.WatchableEventsManager().Signal();
+        chip::DeviceLayer::PlatformMgr().StopEventLoopTask();
 
         StackUnlockGuard unlockGuard(JniReferences::GetInstance().GetStackLock());
         pthread_join(sIOThread, NULL);
@@ -176,6 +168,12 @@ JNI_METHOD(jlong, newDeviceController)(JNIEnv * env, jobject self)
     wrapper = AndroidDeviceControllerWrapper::AllocateNew(sJVM, self, JniReferences::GetInstance().GetStackLock(), kLocalDeviceId,
                                                           nullptr, nullptr, &err);
     SuccessOrExit(err);
+
+    // Create and start the IO thread. Must be called after Controller()->Init
+    if (sIOThread == PTHREAD_NULL) {
+        int pthreadErr = pthread_create(&sIOThread, NULL, IOThreadMain, NULL);
+        VerifyOrExit(pthreadErr == 0, err = System::MapErrorPOSIX(pthreadErr));
+    }
 
     result = wrapper->ToJNIHandle();
 
@@ -697,38 +695,9 @@ void * IOThreadMain(void * arg)
     sJVM->AttachCurrentThreadAsDaemon((void **) &env, (void *) &attachArgs);
 #endif
 
-    // Set to true to quit the loop. This is currently unused.
-    std::atomic<bool> quit;
-
     ChipLogProgress(Controller, "IO thread starting");
-
-    // Lock the stack to prevent collisions with Java threads.
-    pthread_mutex_lock(JniReferences::GetInstance().GetStackLock());
-
-    System::WatchableEventManager & watchState = DeviceLayer::SystemLayer.WatchableEventsManager();
-    watchState.EventLoopBegins();
-
-    // Loop until we are told to exit.
-    while (!quit.load(std::memory_order_relaxed))
-    {
-        // TODO(#5556): add a timer for `sleepTime.tv_sec  = 10; sleepTime.tv_usec = 0;`
-        watchState.PrepareEvents();
-
-        // Unlock the stack so that Java threads can make API calls.
-        pthread_mutex_unlock(JniReferences::GetInstance().GetStackLock());
-
-        watchState.WaitForEvents();
-
-        // Break the loop if requested to shutdown.
-        // if (sShutdown)
-        // break;
-
-        // Re-lock the stack.
-        pthread_mutex_lock(JniReferences::GetInstance().GetStackLock());
-
-        watchState.HandleEvents();
-    }
-    watchState.EventLoopEnds();
+    chip::DeviceLayer::PlatformMgr().RunEventLoop();
+    ChipLogProgress(Controller, "IO thread ending");
 
     // Detach the thread from the JVM.
     sJVM->DetachCurrentThread();
