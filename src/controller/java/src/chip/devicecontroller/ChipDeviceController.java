@@ -42,10 +42,6 @@ public class ChipDeviceController {
     completionListener = listener;
   }
 
-  public BluetoothGatt getBluetoothGatt() {
-    return null;
-  }
-
   public void pairDevice(BluetoothGatt bleServer, int connId, long deviceId, long setupPincode) {
     pairDevice(bleServer, connId, deviceId, setupPincode, null);
   }
@@ -155,10 +151,7 @@ public class ChipDeviceController {
   }
 
   public void onNotifyChipConnectionClosed(int connId) {
-    // Clear connection state.
-//    AndroidChipStack.getInstance().removeConnection(connId);
     connectionId = 0;
-//    bleGatt = null;
 
     Log.d(TAG, "Calling onNotifyChipConnectionClosed()");
     completionListener.onNotifyChipConnectionClosed();
@@ -188,13 +181,7 @@ public class ChipDeviceController {
 
     Log.d(TAG, "Closing GATT and removing connection for " + connId);
 
-    // Close gatt
-//    bleGatt.close();
-
-    // Clear connection state.
-//    AndroidChipStack.getInstance().removeConnection(connId);
     connectionId = 0;
-//    bleGatt = null;
     return true;
   }
 
@@ -259,18 +246,6 @@ public class ChipDeviceController {
   private native boolean openPairingWindow(long deviceControllerPtr, long deviceId, int duration);
 
   private native boolean isActive(long deviceControllerPtr, long deviceId);
-
-  public static native void setKeyValueStoreManager(KeyValueStoreManager manager);
-
-  public static native void setServiceResolver(ServiceResolver resolver);
-
-  public static native void handleServiceResolve(
-      String instanceName,
-      String serviceType,
-      String address,
-      int port,
-      long callbackHandle,
-      long contextHandle);
 
   static {
     System.loadLibrary("CHIPController");

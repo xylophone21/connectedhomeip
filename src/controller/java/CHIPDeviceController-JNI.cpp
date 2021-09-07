@@ -64,9 +64,6 @@ using namespace chip::Thread;
 #define JNI_METHOD(RETURN, METHOD_NAME)                                                                                            \
     extern "C" JNIEXPORT RETURN JNICALL Java_chip_devicecontroller_ChipDeviceController_##METHOD_NAME
 
-#define JNI_ANDROID_CHIP_STACK_METHOD(RETURN, METHOD_NAME)                                                                         \
-    extern "C" JNIEXPORT RETURN JNICALL Java_chip_devicecontroller_AndroidChipStack_##METHOD_NAME
-
 #define CDC_JNI_CALLBACK_LOCAL_REF_COUNT 256
 
 static void GetCHIPDevice(JNIEnv * env, long wrapperHandle, uint64_t deviceId, Device ** device);
@@ -85,7 +82,6 @@ JavaVM * sJVM;
 
 pthread_t sIOThread = PTHREAD_NULL;
 
-jclass sAndroidChipStackCls              = NULL;
 jclass sChipDeviceControllerExceptionCls = NULL;
 
 } // namespace
@@ -116,8 +112,6 @@ jint JNI_OnLoad(JavaVM * jvm, void * reserved)
     ChipLogProgress(Controller, "Loading Java class references.");
 
     // Get various class references need by the API.
-    err = JniReferences::GetInstance().GetClassRef(env, "chip/devicecontroller/AndroidChipStack", sAndroidChipStackCls);
-    SuccessOrExit(err);
     err = JniReferences::GetInstance().GetClassRef(env, "chip/devicecontroller/ChipDeviceControllerException",
                                                    sChipDeviceControllerExceptionCls);
     SuccessOrExit(err);
@@ -569,101 +563,6 @@ JNI_METHOD(jboolean, openPairingWindow)(JNIEnv * env, jobject self, jlong handle
     }
 
     return true;
-}
-
-static bool JavaBytesToUUID(JNIEnv * env, jbyteArray value, chip::Ble::ChipBleUUID & uuid)
-{
-    const auto valueBegin  = env->GetByteArrayElements(value, nullptr);
-    const auto valueLength = env->GetArrayLength(value);
-    bool result            = true;
-
-    VerifyOrExit(valueBegin && valueLength == sizeof(uuid.bytes), result = false);
-    memcpy(uuid.bytes, valueBegin, valueLength);
-
-exit:
-    env->ReleaseByteArrayElements(value, valueBegin, 0);
-    return result;
-}
-
-JNI_ANDROID_CHIP_STACK_METHOD(void, handleIndicationReceived)
-(JNIEnv * env, jobject self, jint conn, jbyteArray svcId, jbyteArray charId, jbyteArray value)
-{
-    StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
-    // BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
-    const auto valueBegin               = env->GetByteArrayElements(value, nullptr);
-    const auto valueLength              = env->GetArrayLength(value);
-
-    chip::Ble::ChipBleUUID svcUUID;
-    chip::Ble::ChipBleUUID charUUID;
-    chip::System::PacketBufferHandle buffer;
-
-    VerifyOrExit(JavaBytesToUUID(env, svcId, svcUUID),
-                 ChipLogError(Controller, "handleIndicationReceived() called with invalid service ID"));
-    VerifyOrExit(JavaBytesToUUID(env, charId, charUUID),
-                 ChipLogError(Controller, "handleIndicationReceived() called with invalid characteristic ID"));
-
-    buffer = System::PacketBufferHandle::NewWithData(valueBegin, valueLength);
-    VerifyOrExit(!buffer.IsNull(), ChipLogError(Controller, "Failed to allocate packet buffer"));
-
-    // sBleLayer.HandleIndicationReceived(connObj, &svcUUID, &charUUID, std::move(buffer));
-exit:
-    env->ReleaseByteArrayElements(value, valueBegin, 0);
-}
-
-JNI_ANDROID_CHIP_STACK_METHOD(void, handleWriteConfirmation)
-(JNIEnv * env, jobject self, jint conn, jbyteArray svcId, jbyteArray charId)
-{
-    StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
-    // BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
-
-    chip::Ble::ChipBleUUID svcUUID;
-    chip::Ble::ChipBleUUID charUUID;
-    VerifyOrReturn(JavaBytesToUUID(env, svcId, svcUUID),
-                   ChipLogError(Controller, "handleWriteConfirmation() called with invalid service ID"));
-    VerifyOrReturn(JavaBytesToUUID(env, charId, charUUID),
-                   ChipLogError(Controller, "handleWriteConfirmation() called with invalid characteristic ID"));
-
-    // sBleLayer.HandleWriteConfirmation(connObj, &svcUUID, &charUUID);
-}
-
-JNI_ANDROID_CHIP_STACK_METHOD(void, handleSubscribeComplete)
-(JNIEnv * env, jobject self, jint conn, jbyteArray svcId, jbyteArray charId)
-{
-    StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
-    // BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
-
-    chip::Ble::ChipBleUUID svcUUID;
-    chip::Ble::ChipBleUUID charUUID;
-    VerifyOrReturn(JavaBytesToUUID(env, svcId, svcUUID),
-                   ChipLogError(Controller, "handleSubscribeComplete() called with invalid service ID"));
-    VerifyOrReturn(JavaBytesToUUID(env, charId, charUUID),
-                   ChipLogError(Controller, "handleSubscribeComplete() called with invalid characteristic ID"));
-
-    // sBleLayer.HandleSubscribeComplete(connObj, &svcUUID, &charUUID);
-}
-
-JNI_ANDROID_CHIP_STACK_METHOD(void, handleUnsubscribeComplete)
-(JNIEnv * env, jobject self, jint conn, jbyteArray svcId, jbyteArray charId)
-{
-    StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
-    // BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
-
-    chip::Ble::ChipBleUUID svcUUID;
-    chip::Ble::ChipBleUUID charUUID;
-    VerifyOrReturn(JavaBytesToUUID(env, svcId, svcUUID),
-                   ChipLogError(Controller, "handleUnsubscribeComplete() called with invalid service ID"));
-    VerifyOrReturn(JavaBytesToUUID(env, charId, charUUID),
-                   ChipLogError(Controller, "handleUnsubscribeComplete() called with invalid characteristic ID"));
-
-    // sBleLayer.HandleUnsubscribeComplete(connObj, &svcUUID, &charUUID);
-}
-
-JNI_ANDROID_CHIP_STACK_METHOD(void, handleConnectionError)(JNIEnv * env, jobject self, jint conn)
-{
-    StackLockGuard lock(JniReferences::GetInstance().GetStackLock());
-    // BLE_CONNECTION_OBJECT const connObj = reinterpret_cast<BLE_CONNECTION_OBJECT>(conn);
-
-    // sBleLayer.HandleConnectionError(connObj, BLE_ERROR_APP_CLOSED_CONNECTION);
 }
 
 JNI_METHOD(void, deleteDeviceController)(JNIEnv * env, jobject self, jlong handle)

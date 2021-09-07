@@ -51,16 +51,11 @@ android_library("java") {
 
   sources = [
     "gen/chip/devicecontroller/ChipClusters.java",
-    "src/chip/devicecontroller/AndroidChipStack.java",
     "src/chip/devicecontroller/ChipClusterException.java",
     "src/chip/devicecontroller/ChipCommandType.java",
     "src/chip/devicecontroller/ChipDeviceController.java",
     "src/chip/devicecontroller/ChipDeviceControllerException.java",
     "src/chip/devicecontroller/GetConnectedDeviceCallbackJni.java",
-    "src/chip/devicecontroller/KeyValueStoreManager.java",
-    "src/chip/devicecontroller/NsdManagerServiceResolver.java",
-    "src/chip/devicecontroller/PreferencesKeyValueStoreManager.java",
-    "src/chip/devicecontroller/ServiceResolver.java",
   ]
 
   javac_flags = [ "-Xlint:deprecation" ]
