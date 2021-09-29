@@ -91,6 +91,7 @@ class Application(IntEnum):
     WINDOW_COVERING = auto()
     SHELL = auto()
     CHIP_TOOL = auto()
+    CHIP_TOOL_IDE = auto()
     BRIDGE = auto()
     TEMPERATURE_MEASUREMENT = auto()
     THERMOSTAT = auto()
