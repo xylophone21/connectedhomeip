@@ -149,7 +149,7 @@ _MATCHERS[Platform.ANDROID].AcceptBoard(Board.ARM, board=AndroidBoard.ARM)
 _MATCHERS[Platform.ANDROID].AcceptBoard(Board.ARM64, board=AndroidBoard.ARM64)
 _MATCHERS[Platform.ANDROID].AcceptBoard(Board.X64, board=AndroidBoard.X64)
 _MATCHERS[Platform.ANDROID].AcceptBoard(Board.X86, board=AndroidBoard.X86)
-_MATCHERS[Platform.ANDROID].AcceptBoard(Board.ALL, board=AndroidBoard.X86)
+_MATCHERS[Platform.ANDROID].AcceptBoard(Board.ALL, board=AndroidBoard.ARM64)
 _MATCHERS[Platform.ANDROID].AcceptApplicationForBoard(
     Application.CHIP_TOOL, Board.ARM, app=AndroidApp.CHIP_TOOL)
 _MATCHERS[Platform.ANDROID].AcceptApplicationForBoard(
