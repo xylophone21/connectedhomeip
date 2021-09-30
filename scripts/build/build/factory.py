@@ -14,7 +14,7 @@
 
 from typing import Set
 
-from builders.android import AndroidBoard, AndroidBuilder
+from builders.android import AndroidBoard, AndroidBuilder, AndroidApp
 from builders.efr32 import Efr32Builder, Efr32App, Efr32Board
 from builders.esp32 import Esp32Builder, Esp32Board, Esp32App
 from builders.host import HostBuilder, HostApp, HostBoard
@@ -149,9 +149,17 @@ _MATCHERS[Platform.ANDROID].AcceptBoard(Board.ARM, board=AndroidBoard.ARM)
 _MATCHERS[Platform.ANDROID].AcceptBoard(Board.ARM64, board=AndroidBoard.ARM64)
 _MATCHERS[Platform.ANDROID].AcceptBoard(Board.X64, board=AndroidBoard.X64)
 _MATCHERS[Platform.ANDROID].AcceptBoard(Board.X86, board=AndroidBoard.X86)
-_MATCHERS[Platform.ANDROID].AcceptBoard(Board.X86, board=AndroidBoard.X86)
-_MATCHERS[Platform.ANDROID].AcceptApplication(Application.CHIP_TOOL)
-_MATCHERS[Platform.ANDROID].AcceptApplication(Application.CHIP_TOOL_IDE)
+_MATCHERS[Platform.ANDROID].AcceptBoard(Board.ALL, board=AndroidBoard.X86)
+_MATCHERS[Platform.ANDROID].AcceptApplicationForBoard(
+    Application.CHIP_TOOL, Board.ARM, app=AndroidApp.CHIP_TOOL)
+_MATCHERS[Platform.ANDROID].AcceptApplicationForBoard(
+    Application.CHIP_TOOL, Board.ARM64, app=AndroidApp.CHIP_TOOL)
+_MATCHERS[Platform.ANDROID].AcceptApplicationForBoard(
+    Application.CHIP_TOOL, Board.X64, app=AndroidApp.CHIP_TOOL)
+_MATCHERS[Platform.ANDROID].AcceptApplicationForBoard(
+    Application.CHIP_TOOL, Board.X86, app=AndroidApp.CHIP_TOOL)
+_MATCHERS[Platform.ANDROID].AcceptApplicationForBoard(
+    Application.CHIP_TOOL_IDE, Board.ALL, app=AndroidApp.CHIP_TOOL_IDE)
 
 _MATCHERS[Platform.INFINEON].AcceptApplication(
     Application.LOCK, app=InfineonApp.LOCK)

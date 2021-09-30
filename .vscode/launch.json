@@ -10,7 +10,7 @@
             "request":"launch",
             "program":"scripts/build/build_examples.py",
             "console":"integratedTerminal",
-            "args": ["--no-log-timestamps", "--platform", "android", "build"]
+            "args": ["--no-log-timestamps", "--platform", "android", "--dry-run", "build"]
         },
     ],
     "inputs": [

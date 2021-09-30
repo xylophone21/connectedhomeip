@@ -25,6 +25,7 @@ class AndroidBoard(Enum):
     ARM64 = auto()
     X64 = auto()
     X86 = auto()
+    ALL = auto()
 
     def TargetCpuName(self):
         if self == AndroidBoard.ARM:
@@ -51,9 +52,14 @@ class AndroidBoard(Enum):
             raise Exception('Unknown board type: %r' % self)
 
 
+class AndroidApp(Enum):
+    CHIP_TOOL = auto()
+    CHIP_TOOL_IDE = auto()
+
+
 class AndroidBuilder(Builder):
 
-    def __init__(self, root, runner, output_prefix: str, board: AndroidBoard):
+    def __init__(self, root, runner, output_prefix: str, board: AndroidBoard, app: AndroidApp):
         super(AndroidBuilder, self).__init__(root, runner, output_prefix)
         self.board = board
 
