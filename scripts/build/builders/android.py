@@ -185,7 +185,7 @@ class AndroidBuilder(Builder):
             jars = {
                 'CHIPController.jar': 'src/controller/java/CHIPController.jar',
                 'SetupPayloadParser.jar': 'src/setup_payload/java/SetupPayloadParser.jar',
-                'AndroidPlatform.jar': 'src/platform/android/AndroidPlatform.jar'
+                # 'AndroidPlatform.jar': 'src/platform/android/AndroidPlatform.jar'
 
             }
             for jarName in jars.keys():
@@ -196,7 +196,8 @@ class AndroidBuilder(Builder):
             self._Execute([
                 '%s/src/android/%s/gradlew' % (self.root,
                                                self.app.AppName()), '-p',
-                '%s/src/android/%s' % (self.root, self.app.AppName()), 'assembleDebug'
+                '%s/src/android/%s' % (self.root,
+                                       self.app.AppName()), 'assembleDebug'
             ],
                 title='Building APP ' + self.identifier)
 
