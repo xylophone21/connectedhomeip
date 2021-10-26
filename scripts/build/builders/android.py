@@ -63,12 +63,15 @@ class AndroidBoard(Enum):
 class AndroidApp(Enum):
     CHIP_TOOL = auto()
     CHIP_TEST = auto()
+    CHIP_TVServer = auto()
 
     def AppName(self):
         if self == AndroidApp.CHIP_TOOL:
             return "CHIPTool"
         elif self == AndroidApp.CHIP_TEST:
             return "CHIPTest"
+        elif self == AndroidApp.CHIP_TVServer:
+            return "CHIPTVServer"
         else:
             raise Exception('Unknown app type: %r' % self)
 
@@ -190,16 +193,17 @@ class AndroidBuilder(Builder):
             #
             #   If we unify the JNI libraries, libc++_shared.so may not be needed anymore, which could
             # be another path of resolving this inconsistency.
-            for libName in ['libSetupPayloadParser.so', 'libCHIPController.so', 'libc++_shared.so']:
+            for libName in ['libSetupPayloadParser.so', 'libCHIPController.so', 'libc++_shared.so', 'libCHIPAppServer.so']:
                 self._Execute(['cp', os.path.join(self.output_dir, 'lib', 'jni', self.board.AbiName(
                 ), libName), os.path.join(jnilibs_dir, libName)])
 
             jars = {
                 'CHIPController.jar': 'src/controller/java/CHIPController.jar',
                 'SetupPayloadParser.jar': 'src/setup_payload/java/SetupPayloadParser.jar',
-                'AndroidPlatform.jar': 'src/platform/android/AndroidPlatform.jar'
-
+                'AndroidPlatform.jar': 'src/platform/android/AndroidPlatform.jar',
+                'CHIPAppServer.jar': 'src/app/server/java/CHIPAppServer.jar',
             }
+
             for jarName in jars.keys():
                 self._Execute(['cp', os.path.join(
                     self.output_dir, 'lib', jars[jarName]), os.path.join(libs_dir, jarName)])

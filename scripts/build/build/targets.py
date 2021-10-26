@@ -149,6 +149,7 @@ def AndroidTargets():
     #   - Compiling locally in the vscode image fails with
     #     "2 files found with path 'lib/armeabi-v7a/libCHIPController.so'"
     # yield target.Extend('androidstudio-chip-tool', board=AndroidBoard.AndroidStudio, app=AndroidApp.CHIP_TOOL)
+    yield target.Extend('arm64-chip-tvserver', board=AndroidBoard.ARM64, app=AndroidApp.CHIP_TVServer)
 
 
 ALL = []
