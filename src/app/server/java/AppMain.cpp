@@ -73,10 +73,10 @@ int ChipLinuxAppInit(int argc, char ** argv)
     PrintOnboardingCodesInAppMain(chip::RendezvousInformationFlag::kOnNetwork);
 #endif
 
-
-
     chip::DeviceLayer::PlatformMgrImpl().AddEventHandler(EventHandler, 0);
 
+    // Init ZCL Data Model and CHIP App Server
+    chip::Server::GetInstance().Init(nullptr, CHIP_PORT, CHIP_UDC_PORT);
 
 exit:
     if (err != CHIP_NO_ERROR)
@@ -90,11 +90,6 @@ exit:
 
 void ChipLinuxAppMainLoop()
 {
-    uint16_t securePort   = CHIP_PORT;
-    uint16_t unsecurePort = CHIP_UDC_PORT;
-    // Init ZCL Data Model and CHIP App Server
-    chip::Server::GetInstance().Init(nullptr, securePort, unsecurePort);
-
     chip::DeviceLayer::PlatformMgr().RunEventLoop();
 }
 
@@ -157,9 +152,3 @@ void  setQRcodeobject(jobject QRcodeObject)
  //   sgetQRcodeClass = env->GetObjectClass(sgetQRcodeObject);
     VerifyOrReturn(sgetQRcodeObject != nullptr, ChipLogError(DeviceLayer, "Failed to get Java object"));
 }
-
-
-
-
-
-

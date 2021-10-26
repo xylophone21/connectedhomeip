@@ -96,6 +96,10 @@ JNI_METHOD(jint, entryAppmain)(JNIEnv * env, jobject self)
  //   err = DeviceLayer::PlatformMgr().InitChipStack();
     DeviceLayer::PlatformMgr().InitChipStack();
 
+    int argc=0;
+    char * argv[]={0};
+    ChipLinuxAppInit(argc, argv);
+
     if (sIOThread == PTHREAD_NULL)
     {
 	    pthread_create(&sIOThread, NULL, IOThreadAppMain, NULL);
@@ -108,12 +112,25 @@ JNI_METHOD(jint, entryAppmain)(JNIEnv * env, jobject self)
 
 void * IOThreadAppMain(void * arg)
 {
+    JNIEnv * env;
+    JavaVMAttachArgs attachArgs;
 
+    // Attach the IO thread to the JVM as a daemon thread.
+    // This allows the JVM to shutdown without waiting for this thread to exit.
+    attachArgs.version = JNI_VERSION_1_6;
+    attachArgs.name    = (char *) "CHIP Device Controller IO Thread";
+    attachArgs.group   = NULL;
+#ifdef __ANDROID__
+    sJVM->AttachCurrentThreadAsDaemon(&env, (void *) &attachArgs);
+#else
+    sJVM->AttachCurrentThreadAsDaemon((void **) &env, (void *) &attachArgs);
+#endif
 
-    int argc=0;
-    char * argv[]={0};
-    ChipLinuxAppInit(argc, argv);
     ChipLinuxAppMainLoop();
+    
+    // Detach the thread from the JVM.
+    sJVM->DetachCurrentThread();
+
     return NULL;
 }
 
@@ -132,7 +149,3 @@ JNI_METHOD(void, setQRCodeListener)(JNIEnv * env, jclass self, jobject listener)
     chip::DeviceLayer::StackLock lock;
     setQRcodeobject(listener);
 }
-
-
-
-
