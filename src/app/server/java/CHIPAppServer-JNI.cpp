@@ -21,44 +21,118 @@
  *      Implementation of JNI bridge for CHIP App Server for Android apps
  *
  */
+#include <lib/core/CHIPError.h>
 #include <lib/support/CHIPJNIError.h>
-#include <lib/support/JniReferences.h>
-#include <lib/support/JniTypeWrappers.h>
-
-#include <app/chip-zcl-zpro-codec.h>
-#include <atomic>
-#include <ble/BleUUID.h>
-#include <controller/CHIPDeviceController.h>
-#include <jni.h>
 #include <lib/support/CHIPMem.h>
 #include <lib/support/CodeUtils.h>
-#include <lib/support/ErrorStr.h>
-#include <lib/support/SafeInt.h>
-#include <lib/support/ThreadOperationalDataset.h>
-#include <lib/support/logging/CHIPLogging.h>
+#include <lib/support/JniReferences.h>
+#include <lib/support/JniTypeWrappers.h>
+#include <platform/CHIPDeviceConfig.h>
+#include <platform/ConfigurationManager.h>
+#include <platform/ConnectivityManager.h>
 #include <platform/KeyValueStoreManager.h>
-#include <protocols/Protocols.h>
-#include <protocols/temp_zcl/TempZCL.h>
-#include <pthread.h>
-
+#include <platform/internal/BLEManager.h>
 #include <platform/android/AndroidChipPlatform-JNI.h>
+#include "AppMain.h"
 
 using namespace chip;
-using namespace chip::Inet;
-using namespace chip::Controller;
+using namespace chip::DeviceLayer;
+
 
 #define JNI_METHOD(RETURN, METHOD_NAME)                                                                                            \
-    extern "C" JNIEXPORT RETURN JNICALL Java_chip_devicecontroller_ChipDeviceController_##METHOD_NAME
+    extern "C" JNIEXPORT RETURN JNICALL Java_chip_appserver_ChipAppServer_##METHOD_NAME
 
-namespace {
-// JavaVM * sJVM;
-} // namespace
+#ifndef PTHREAD_NULL
+#define PTHREAD_NULL 0
+#endif // PTHREAD_NULL
+
+static void * IOThreadAppMain(void * arg);
+
+JavaVM * sJVM;
+pthread_t sIOThread = 0;
+
+
+
+
 
 jint JNI_OnLoad(JavaVM * jvm, void * reserved)
 {
-    return JNI_VERSION_1_6;
+	
+    CHIP_ERROR err = CHIP_NO_ERROR;
+    JNIEnv * env;
+
+    chip::Platform::MemoryInit();
+
+    // Save a reference to the JVM.  Will need this to call back into Java.
+    JniReferences::GetInstance().SetJavaVm(jvm, "chip/appserver/ChipAppServer");
+    sJVM = jvm;
+
+    // Get a JNI environment object.
+    env = JniReferences::GetInstance().GetEnvForCurrentThread();
+
+
+    ChipLogProgress(AppServer, "Loading Java class references.");
+
+    err= AndroidChipPlatformJNI_OnLoad(jvm, reserved);
+
+    return (err == CHIP_NO_ERROR) ? JNI_VERSION_1_6 : JNI_ERR;
+    	
 }
 
 void JNI_OnUnload(JavaVM * jvm, void * reserved)
 {
+	
+    ChipLogProgress(DeviceLayer, "AndroidChipPlatform JNI_OnUnload() called");
+    chip::Platform::MemoryShutdown();
 }
+
+
+
+JNI_METHOD(jint, entryAppmain)(JNIEnv * env, jobject self)
+{
+    chip::DeviceLayer::StackLock lock;
+  //  CHIP_ERROR err                           = CHIP_NO_ERROR;
+
+ //   err = DeviceLayer::PlatformMgr().InitChipStack();
+    DeviceLayer::PlatformMgr().InitChipStack();
+
+    if (sIOThread == PTHREAD_NULL)
+    {
+	    pthread_create(&sIOThread, NULL, IOThreadAppMain, NULL);
+    }
+
+    return JNI_VERSION_1_6;
+}
+
+
+
+void * IOThreadAppMain(void * arg)
+{
+
+
+    int argc=0;
+    char * argv[]={0};
+    ChipLinuxAppInit(argc, argv);
+    ChipLinuxAppMainLoop();
+    return NULL;
+}
+
+
+
+
+JNI_METHOD(void, setConfigurationManager)(JNIEnv * env, jclass self, jobject config)
+{
+    chip::DeviceLayer::StackLock lock;
+    chip::DeviceLayer::ConfigurationMgrImpl().InitializeWithObject(config);
+}
+
+
+JNI_METHOD(void, setQRCodeListener)(JNIEnv * env, jclass self, jobject listener)
+{
+    chip::DeviceLayer::StackLock lock;
+    setQRcodeobject(listener);
+}
+
+
+
+

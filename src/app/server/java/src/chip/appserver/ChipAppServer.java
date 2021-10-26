@@ -20,8 +20,75 @@ package chip.appserver;
 /** Controller to interact with the CHIP device. */
 public class ChipAppServer {
   private static final String TAG = ChipAppServer.class.getSimpleName();
-
+  private int mPinCode;
+  
   static {
     System.loadLibrary("CHIPAppServer");
   }
+
+    public ChipAppServer() {
+    }
+
+    public native static int entryAppmain();
+
+    public native static void setConfigurationManager(ChipAppServer controller);
+
+    public native static void setQRCodeListener(ChipQRCodeListener listener);
+
+    public String getSerialNumber() {
+        return "TV_SN";
+    }
+
+    public int getVendorId() {
+        return 9050;
+    }
+
+    public int getProductId() {
+        return 65279;
+    }
+
+    public int getProductRevision() {
+        return 1;
+    }
+
+
+    public int getDiscriminator() {
+        return 3840;
+    }
+
+    public int getDeviceType() {
+        return 257;
+    }
+
+    public long getSetUpPinCode() {
+        return mPinCode;
+    }
+
+    public void setSetUpPinCode(int pinCode) {
+        mPinCode = pinCode;
+    }
+
+    public interface ChipQRCodeListener {
+
+        /**
+         * Notifies the completion of "ConnectDevice" command.
+         */
+        void onQrCode(String qrCode);
+
+        void onManualPairingCode(String manualPairingCode);
+    }
+
+
+
 }
+
+
+
+
+
+
+
+
+
+
+
