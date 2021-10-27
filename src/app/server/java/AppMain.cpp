@@ -28,6 +28,8 @@
 #include <lib/support/CHIPMem.h>
 #include <lib/support/ScopedBuffer.h>
 #include <lib/support/JniTypeWrappers.h>
+#include <credentials/DeviceAttestationCredsProvider.h>
+#include <credentials/examples/DeviceAttestationCredsExample.h>
 
 
 
@@ -38,6 +40,7 @@ static jobject sgetQRcodeObject = nullptr;
 static jclass sgetQRcodeClass = nullptr;
 
 using namespace chip;
+using namespace chip::Credentials;
 using namespace chip::Inet;
 using namespace chip::Transport;
 using namespace chip::DeviceLayer;
@@ -72,6 +75,9 @@ int ChipLinuxAppInit(int argc, char ** argv)
 #else
     PrintOnboardingCodesInAppMain(chip::RendezvousInformationFlag::kOnNetwork);
 #endif
+
+    // TODO: move load DAC to java
+    SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());
 
     chip::DeviceLayer::PlatformMgrImpl().AddEventHandler(EventHandler, 0);
 
