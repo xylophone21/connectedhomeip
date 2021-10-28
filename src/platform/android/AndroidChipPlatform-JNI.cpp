@@ -43,8 +43,6 @@ using namespace chip;
 #define JNI_MDNSCALLBACK_METHOD(RETURN, METHOD_NAME)                                                                               \
     extern "C" JNIEXPORT RETURN JNICALL Java_chip_platform_ChipMdnsCallbackImpl_##METHOD_NAME
 
-static void ThrowError(JNIEnv * env, CHIP_ERROR errToThrow);
-static CHIP_ERROR N2J_Error(JNIEnv * env, CHIP_ERROR inErr, jthrowable & outEx);
 static bool JavaBytesToUUID(JNIEnv * env, jbyteArray value, chip::Ble::ChipBleUUID & uuid);
 
 namespace {
@@ -83,7 +81,7 @@ CHIP_ERROR AndroidChipPlatformJNI_OnLoad(JavaVM * jvm, void * reserved)
 exit:
     if (err != CHIP_NO_ERROR)
     {
-        ThrowError(env, err);
+        JniReferences::GetInstance().ThrowError(env, sAndroidChipPlatformExceptionCls, err);
         JNI_OnUnload(jvm, reserved);
     }
 
@@ -213,58 +211,6 @@ JNI_MDNSCALLBACK_METHOD(void, handleServiceResolve)
 {
     using ::chip::Dnssd::HandleResolve;
     HandleResolve(instanceName, serviceType, address, port, callbackHandle, contextHandle);
-}
-
-void ThrowError(JNIEnv * env, CHIP_ERROR errToThrow)
-{
-    CHIP_ERROR err = CHIP_NO_ERROR;
-    jthrowable ex;
-
-    err = N2J_Error(env, errToThrow, ex);
-    if (err == CHIP_NO_ERROR)
-    {
-        env->Throw(ex);
-    }
-}
-
-CHIP_ERROR N2J_Error(JNIEnv * env, CHIP_ERROR inErr, jthrowable & outEx)
-{
-    CHIP_ERROR err      = CHIP_NO_ERROR;
-    const char * errStr = NULL;
-    jstring errStrObj   = NULL;
-    jmethodID constructor;
-
-    env->ExceptionClear();
-    constructor = env->GetMethodID(sAndroidChipPlatformExceptionCls, "<init>", "(ILjava/lang/String;)V");
-    VerifyOrExit(constructor != NULL, err = CHIP_JNI_ERROR_METHOD_NOT_FOUND);
-
-    switch (inErr.AsInteger())
-    {
-    case CHIP_JNI_ERROR_TYPE_NOT_FOUND.AsInteger():
-        errStr = "CHIP Device Controller Error: JNI type not found";
-        break;
-    case CHIP_JNI_ERROR_METHOD_NOT_FOUND.AsInteger():
-        errStr = "CHIP Device Controller Error: JNI method not found";
-        break;
-    case CHIP_JNI_ERROR_FIELD_NOT_FOUND.AsInteger():
-        errStr = "CHIP Device Controller Error: JNI field not found";
-        break;
-    case CHIP_JNI_ERROR_DEVICE_NOT_FOUND.AsInteger():
-        errStr = "CHIP Device Controller Error: Device not found";
-        break;
-    default:
-        errStr = ErrorStr(inErr);
-        break;
-    }
-    errStrObj = (errStr != NULL) ? env->NewStringUTF(errStr) : NULL;
-
-    outEx =
-        (jthrowable) env->NewObject(sAndroidChipPlatformExceptionCls, constructor, static_cast<jint>(inErr.AsInteger()), errStrObj);
-    VerifyOrExit(!env->ExceptionCheck(), err = CHIP_JNI_ERROR_EXCEPTION_THROWN);
-
-exit:
-    env->DeleteLocalRef(errStrObj);
-    return err;
 }
 
 static bool JavaBytesToUUID(JNIEnv * env, jbyteArray value, chip::Ble::ChipBleUUID & uuid)

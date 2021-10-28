@@ -59,9 +59,7 @@ using namespace chip::Controller;
 
 #define CDC_JNI_CALLBACK_LOCAL_REF_COUNT 256
 
-static void ThrowError(JNIEnv * env, CHIP_ERROR errToThrow);
 static void * IOThreadMain(void * arg);
-static CHIP_ERROR N2J_Error(JNIEnv * env, CHIP_ERROR inErr, jthrowable & outEx);
 static CHIP_ERROR N2J_PaseVerifierParams(JNIEnv * env, jlong setupPincode, jint passcodeId, jbyteArray pakeVerifier,
                                          jobject & outParams);
 
@@ -112,7 +110,7 @@ jint JNI_OnLoad(JavaVM * jvm, void * reserved)
 exit:
     if (err != CHIP_NO_ERROR)
     {
-        ThrowError(env, err);
+        JniReferences::GetInstance().ThrowError(env, sChipDeviceControllerExceptionCls, err);
         chip::DeviceLayer::StackUnlock unlock;
         JNI_OnUnload(jvm, reserved);
     }
@@ -175,7 +173,7 @@ exit:
 
         if (err != CHIP_JNI_ERROR_EXCEPTION_THROWN)
         {
-            ThrowError(env, err);
+            JniReferences::GetInstance().ThrowError(env, sChipDeviceControllerExceptionCls, err);
         }
     }
 
@@ -205,7 +203,7 @@ JNI_METHOD(void, pairDevice)
     if (err != CHIP_NO_ERROR)
     {
         ChipLogError(Controller, "Failed to pair the device.");
-        ThrowError(env, err);
+        JniReferences::GetInstance().ThrowError(env, sChipDeviceControllerExceptionCls, err);
     }
 }
 
@@ -222,7 +220,7 @@ JNI_METHOD(void, pairDeviceWithAddress)
     Inet::IPAddress addr;
     JniUtfString addrJniString(env, address);
     VerifyOrReturn(Inet::IPAddress::FromString(addrJniString.c_str(), addr),
-                   ChipLogError(Controller, "Failed to parse IP address."), ThrowError(env, CHIP_ERROR_INVALID_ARGUMENT));
+                   ChipLogError(Controller, "Failed to parse IP address."), JniReferences::GetInstance().ThrowError(env, sChipDeviceControllerExceptionCls, CHIP_ERROR_INVALID_ARGUMENT));
 
     RendezvousParameters params = RendezvousParameters()
                                       .SetDiscriminator(discriminator)
@@ -238,7 +236,7 @@ JNI_METHOD(void, pairDeviceWithAddress)
     if (err != CHIP_NO_ERROR)
     {
         ChipLogError(Controller, "Failed to pair the device.");
-        ThrowError(env, err);
+        JniReferences::GetInstance().ThrowError(env, sChipDeviceControllerExceptionCls, err);
     }
 }
 
@@ -255,7 +253,7 @@ JNI_METHOD(void, unpairDevice)(JNIEnv * env, jobject self, jlong handle, jlong d
     if (err != CHIP_NO_ERROR)
     {
         ChipLogError(Controller, "Failed to unpair the device.");
-        ThrowError(env, err);
+        JniReferences::GetInstance().ThrowError(env, sChipDeviceControllerExceptionCls, err);
     }
 }
 
@@ -272,7 +270,7 @@ JNI_METHOD(void, stopDevicePairing)(JNIEnv * env, jobject self, jlong handle, jl
     if (err != CHIP_NO_ERROR)
     {
         ChipLogError(Controller, "Failed to unpair the device.");
-        ThrowError(env, err);
+        JniReferences::GetInstance().ThrowError(env, sChipDeviceControllerExceptionCls, err);
     }
 }
 
@@ -321,7 +319,7 @@ JNI_METHOD(jstring, getIpAddress)(JNIEnv * env, jobject self, jlong handle, jlon
     if (err != CHIP_NO_ERROR)
     {
         ChipLogError(Controller, "Failed to get device address.");
-        ThrowError(env, err);
+        JniReferences::GetInstance().ThrowError(env, sChipDeviceControllerExceptionCls, err);
     }
 
     addr.ToString(addrStr);
@@ -347,7 +345,7 @@ JNI_METHOD(void, updateDevice)(JNIEnv * env, jobject self, jlong handle, jlong f
     if (err != CHIP_NO_ERROR)
     {
         ChipLogError(Controller, "Failed to update device");
-        ThrowError(env, err);
+        JniReferences::GetInstance().ThrowError(env, sChipDeviceControllerExceptionCls, err);
     }
 }
 
@@ -451,7 +449,7 @@ JNI_METHOD(jobject, computePaseVerifier)
 exit:
     if (err != CHIP_NO_ERROR)
     {
-        ThrowError(env, err);
+        JniReferences::GetInstance().ThrowError(env, sChipDeviceControllerExceptionCls, err);
     }
     return nullptr;
 }
@@ -482,18 +480,6 @@ void * IOThreadMain(void * arg)
     return NULL;
 }
 
-void ThrowError(JNIEnv * env, CHIP_ERROR errToThrow)
-{
-    CHIP_ERROR err = CHIP_NO_ERROR;
-    jthrowable ex;
-
-    err = N2J_Error(env, errToThrow, ex);
-    if (err == CHIP_NO_ERROR)
-    {
-        env->Throw(ex);
-    }
-}
-
 CHIP_ERROR N2J_PaseVerifierParams(JNIEnv * env, jlong setupPincode, jint passcodeId, jbyteArray paseVerifier, jobject & outParams)
 {
     CHIP_ERROR err = CHIP_NO_ERROR;
@@ -512,45 +498,5 @@ CHIP_ERROR N2J_PaseVerifierParams(JNIEnv * env, jlong setupPincode, jint passcod
 
     VerifyOrExit(!env->ExceptionCheck(), err = CHIP_JNI_ERROR_EXCEPTION_THROWN);
 exit:
-    return err;
-}
-
-CHIP_ERROR N2J_Error(JNIEnv * env, CHIP_ERROR inErr, jthrowable & outEx)
-{
-    CHIP_ERROR err      = CHIP_NO_ERROR;
-    const char * errStr = NULL;
-    jstring errStrObj   = NULL;
-    jmethodID constructor;
-
-    env->ExceptionClear();
-    constructor = env->GetMethodID(sChipDeviceControllerExceptionCls, "<init>", "(ILjava/lang/String;)V");
-    VerifyOrExit(constructor != NULL, err = CHIP_JNI_ERROR_METHOD_NOT_FOUND);
-
-    switch (inErr.AsInteger())
-    {
-    case CHIP_JNI_ERROR_TYPE_NOT_FOUND.AsInteger():
-        errStr = "CHIP Device Controller Error: JNI type not found";
-        break;
-    case CHIP_JNI_ERROR_METHOD_NOT_FOUND.AsInteger():
-        errStr = "CHIP Device Controller Error: JNI method not found";
-        break;
-    case CHIP_JNI_ERROR_FIELD_NOT_FOUND.AsInteger():
-        errStr = "CHIP Device Controller Error: JNI field not found";
-        break;
-    case CHIP_JNI_ERROR_DEVICE_NOT_FOUND.AsInteger():
-        errStr = "CHIP Device Controller Error: Device not found";
-        break;
-    default:
-        errStr = ErrorStr(inErr);
-        break;
-    }
-    errStrObj = (errStr != NULL) ? env->NewStringUTF(errStr) : NULL;
-
-    outEx = (jthrowable) env->NewObject(sChipDeviceControllerExceptionCls, constructor, static_cast<jint>(inErr.AsInteger()),
-                                        errStrObj);
-    VerifyOrExit(!env->ExceptionCheck(), err = CHIP_JNI_ERROR_EXCEPTION_THROWN);
-
-exit:
-    env->DeleteLocalRef(errStrObj);
     return err;
 }

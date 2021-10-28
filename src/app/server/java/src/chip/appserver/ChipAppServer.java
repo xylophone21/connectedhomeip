@@ -27,7 +27,7 @@ public class ChipAppServer {
         System.loadLibrary("CHIPAppServer");
     }
 
-    public native static int startApp();
+    public native boolean startApp();
 }
 
 

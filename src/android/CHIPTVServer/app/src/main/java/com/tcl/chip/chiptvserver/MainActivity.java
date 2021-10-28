@@ -1,13 +1,14 @@
 package com.tcl.chip.chiptvserver;
 
+import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.util.Random;
+import java.util.HashSet;
 
 import chip.appserver.ChipAppServer;
 import chip.platform.AndroidBleManager;
@@ -16,9 +17,12 @@ import chip.platform.ChipMdnsCallbackImpl;
 import chip.platform.NsdManagerServiceResolver;
 import chip.platform.PreferencesConfigurationManager;
 import chip.platform.PreferencesKeyValueStoreManager;
+import chip.setuppayload.DiscoveryCapability;
+import chip.setuppayload.SetupPayload;
+import chip.setuppayload.SetupPayloadParser;
 
+public class MainActivity extends AppCompatActivity {
 
-public class MainActivity extends AppCompatActivity{
     private ImageView mQrCode;
     private TextView mQrCodeTxt;
     private TextView mManualPairingCodeTxt;
@@ -37,29 +41,36 @@ public class MainActivity extends AppCompatActivity{
                 new NsdManagerServiceResolver(this),
                 new ChipMdnsCallbackImpl());
 
-//        //  chipAppServer.setSetUpPinCode(getPinCode());
-//        chipAppServer.setSetUpPinCode(20202021);
-//        mQrCodeTxt.setText("SerialNumber:"+ chipAppServer.getSerialNumber() +
-//                ",VendorId:"+ chipAppServer.getVendorId() +
-//                ",ProductId:"+ chipAppServer.getProductId() +
-//                ",ProductRevision:"+ chipAppServer.getProductRevision() +
-//                ",SetUpPinCode:"+ chipAppServer.getSetUpPinCode() +
-//                ",Discriminator:"+ chipAppServer.getDiscriminator()+
-//                ",DeviceType:"+ chipAppServer.getDeviceType());
-//      //  chipAppServer.setConfigurationManager(chipAppServer);
-//        chipAppServer.setQRCodeListener(this);
-        int i = chipAppServer.startApp();
-        Log.d("MainActivity","i = " + i);
-        //TODO: set Configuration and getQRCode function will be impletement in setuppayload
-    }
+        //TODO: Get these parameters from PreferencesConfigurationManager
+        HashSet<DiscoveryCapability> discoveryCapabilities = new HashSet<>();
+        discoveryCapabilities.add(DiscoveryCapability.ON_NETWORK);
+        SetupPayload payload = new SetupPayload(
+                0
+                , 9050
+                , 65279
+                , 0
+                , discoveryCapabilities
+                , 3840
+                , 20202021);
 
-    private int getPinCode() {
+        SetupPayloadParser parser = new SetupPayloadParser();
+        try {
+            String qrCode = parser.getQrCodeFromPayload(payload);
+            mQrCodeTxt.setText(qrCode);
 
-        Random random = new Random();
-        int result = 0;
-        for (int i = 0; i < 8; i++) {
-            result += (random.nextInt(10) * Math.pow(10, i));
+            Bitmap qrCodeBitmap = QRUtils.createQRCodeBitmap(qrCode, 800, 800, "UTF-8", "H", "1", Color.BLACK, Color.WHITE);
+            mQrCode.setImageBitmap(qrCodeBitmap);
+        } catch (SetupPayloadParser.SetupPayloadException e) {
+            e.printStackTrace();
         }
-        return result;
+
+        try {
+            String manualPairingCode = parser.getManualEntryCodeFromPayload(payload);
+            mManualPairingCodeTxt.setText("ManualPairingCode:" + manualPairingCode);
+        } catch (SetupPayloadParser.SetupPayloadException e) {
+            e.printStackTrace();
+        }
+
+        chipAppServer.startApp();
     }
 }

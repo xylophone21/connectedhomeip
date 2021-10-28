@@ -18,4 +18,4 @@
 
 #pragma once
 
-int ChipAndroidAppInit(void);
+CHIP_ERROR ChipAndroidAppInit(void);

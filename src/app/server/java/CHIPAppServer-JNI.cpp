@@ -21,6 +21,7 @@
  *      Implementation of JNI bridge for CHIP App Server for Android TV apps
  *
  */
+#include <jni.h>
 #include <lib/core/CHIPError.h>
 #include <lib/support/CHIPJNIError.h>
 #include <lib/support/CHIPMem.h>
@@ -46,9 +47,7 @@ using namespace chip::DeviceLayer;
 #define PTHREAD_NULL 0
 #endif // PTHREAD_NULL
 
-static void ThrowError(JNIEnv * env, CHIP_ERROR errToThrow);
 static void * IOThreadAppMain(void * arg);
-static CHIP_ERROR N2J_Error(JNIEnv * env, CHIP_ERROR inErr, jthrowable & outEx);
 
 namespace {
 JavaVM * sJVM;
@@ -87,7 +86,7 @@ jint JNI_OnLoad(JavaVM * jvm, void * reserved)
 exit:
     if (err != CHIP_NO_ERROR)
     {
-        ThrowError(env, err);
+        JniReferences::GetInstance().ThrowError(env, sChipAppServerExceptionCls, err);
         chip::DeviceLayer::StackUnlock unlock;
         JNI_OnUnload(jvm, reserved);
     }
@@ -114,18 +113,24 @@ void JNI_OnUnload(JavaVM * jvm, void * reserved)
     chip::Platform::MemoryShutdown();
 }
 
-JNI_METHOD(jint, startApp)(JNIEnv * env, jobject self)
+JNI_METHOD(jboolean, startApp)(JNIEnv * env, jobject self)
 {
     chip::DeviceLayer::StackLock lock;
 
-    ChipAndroidAppInit();
+    CHIP_ERROR err = ChipAndroidAppInit();
+    SuccessOrExit(err);
 
     if (sIOThread == PTHREAD_NULL)
     {
 	    pthread_create(&sIOThread, NULL, IOThreadAppMain, NULL);
     }
 
-    return JNI_VERSION_1_6;
+exit:
+    if (err != CHIP_NO_ERROR)
+    {
+        return JNI_FALSE;
+    }
+    return JNI_TRUE;
 }
 
 void * IOThreadAppMain(void * arg)
@@ -152,56 +157,4 @@ void * IOThreadAppMain(void * arg)
     sJVM->DetachCurrentThread();
 
     return NULL;
-}
-
-void ThrowError(JNIEnv * env, CHIP_ERROR errToThrow)
-{
-    CHIP_ERROR err = CHIP_NO_ERROR;
-    jthrowable ex;
-
-    err = N2J_Error(env, errToThrow, ex);
-    if (err == CHIP_NO_ERROR)
-    {
-        env->Throw(ex);
-    }
-}
-
-CHIP_ERROR N2J_Error(JNIEnv * env, CHIP_ERROR inErr, jthrowable & outEx)
-{
-    CHIP_ERROR err      = CHIP_NO_ERROR;
-    const char * errStr = NULL;
-    jstring errStrObj   = NULL;
-    jmethodID constructor;
-
-    env->ExceptionClear();
-    constructor = env->GetMethodID(sChipAppServerExceptionCls, "<init>", "(ILjava/lang/String;)V");
-    VerifyOrExit(constructor != NULL, err = CHIP_JNI_ERROR_METHOD_NOT_FOUND);
-
-    switch (inErr.AsInteger())
-    {
-    case CHIP_JNI_ERROR_TYPE_NOT_FOUND.AsInteger():
-        errStr = "CHIP App Server Error: JNI type not found";
-        break;
-    case CHIP_JNI_ERROR_METHOD_NOT_FOUND.AsInteger():
-        errStr = "CHIP App Server Error: JNI method not found";
-        break;
-    case CHIP_JNI_ERROR_FIELD_NOT_FOUND.AsInteger():
-        errStr = "CHIP App Server Error: JNI field not found";
-        break;
-    case CHIP_JNI_ERROR_DEVICE_NOT_FOUND.AsInteger():
-        errStr = "CHIP App Server Error: Device not found";
-        break;
-    default:
-        errStr = ErrorStr(inErr);
-        break;
-    }
-    errStrObj = (errStr != NULL) ? env->NewStringUTF(errStr) : NULL;
-
-    outEx = (jthrowable) env->NewObject(sChipAppServerExceptionCls, constructor, static_cast<jint>(inErr.AsInteger()),
-                                        errStrObj);
-    VerifyOrExit(!env->ExceptionCheck(), err = CHIP_JNI_ERROR_EXCEPTION_THROWN);
-
-exit:
-    env->DeleteLocalRef(errStrObj);
-    return err;
 }
