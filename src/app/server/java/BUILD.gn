@@ -37,7 +37,6 @@ shared_library("jni") {
     "${chip_root}/examples/tv-app/tv-common",
     "${chip_root}/third_party/inipp",
     "${chip_root}/examples/tv-app/android:android-tv-app",
-   # "${chip_root}/src/controller/java:jni",
   ]
 
   public_configs = [ "${chip_root}/src:includes" ]

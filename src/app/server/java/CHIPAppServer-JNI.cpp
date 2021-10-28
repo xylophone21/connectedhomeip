@@ -18,7 +18,7 @@
 
 /**
  *    @file
- *      Implementation of JNI bridge for CHIP App Server for Android apps
+ *      Implementation of JNI bridge for CHIP App Server for Android TV apps
  *
  */
 #include <lib/core/CHIPError.h>
@@ -46,20 +46,22 @@ using namespace chip::DeviceLayer;
 #define PTHREAD_NULL 0
 #endif // PTHREAD_NULL
 
+static void ThrowError(JNIEnv * env, CHIP_ERROR errToThrow);
 static void * IOThreadAppMain(void * arg);
+static CHIP_ERROR N2J_Error(JNIEnv * env, CHIP_ERROR inErr, jthrowable & outEx);
 
+namespace {
 JavaVM * sJVM;
-pthread_t sIOThread = 0;
-
-
-
-
+pthread_t sIOThread = PTHREAD_NULL;
+jclass sChipAppServerExceptionCls = NULL;
+} // namespace
 
 jint JNI_OnLoad(JavaVM * jvm, void * reserved)
 {
-	
     CHIP_ERROR err = CHIP_NO_ERROR;
     JNIEnv * env;
+
+    ChipLogProgress(AppServer, "JNI_OnLoad() called");
 
     chip::Platform::MemoryInit();
 
@@ -69,36 +71,54 @@ jint JNI_OnLoad(JavaVM * jvm, void * reserved)
 
     // Get a JNI environment object.
     env = JniReferences::GetInstance().GetEnvForCurrentThread();
-
+    VerifyOrExit(env != NULL, err = CHIP_JNI_ERROR_NO_ENV);
 
     ChipLogProgress(AppServer, "Loading Java class references.");
 
-    err= AndroidChipPlatformJNI_OnLoad(jvm, reserved);
+    // Get various class references need by the API.
+    err = JniReferences::GetInstance().GetClassRef(env, "chip/appserver/ChipAppServerException",
+                                                   sChipAppServerExceptionCls);
+    SuccessOrExit(err);
+    ChipLogProgress(AppServer, "Java class references loaded.");
+
+    err = AndroidChipPlatformJNI_OnLoad(jvm, reserved);
+    SuccessOrExit(err);
+
+exit:
+    if (err != CHIP_NO_ERROR)
+    {
+        ThrowError(env, err);
+        chip::DeviceLayer::StackUnlock unlock;
+        JNI_OnUnload(jvm, reserved);
+    }
 
     return (err == CHIP_NO_ERROR) ? JNI_VERSION_1_6 : JNI_ERR;
-    	
 }
 
 void JNI_OnUnload(JavaVM * jvm, void * reserved)
 {
-	
-    ChipLogProgress(DeviceLayer, "AndroidChipPlatform JNI_OnUnload() called");
+    chip::DeviceLayer::StackLock lock;
+    ChipLogProgress(AppServer, "JNI_OnUnload() called");
+
+    // If the IO thread has been started, shut it down and wait for it to exit.
+    if (sIOThread != PTHREAD_NULL)
+    {
+        chip::DeviceLayer::PlatformMgr().StopEventLoopTask();
+
+        chip::DeviceLayer::StackUnlock unlock;
+        pthread_join(sIOThread, NULL);
+    }
+
+    sJVM = NULL;
+
     chip::Platform::MemoryShutdown();
 }
 
-
-
-JNI_METHOD(jint, entryAppmain)(JNIEnv * env, jobject self)
+JNI_METHOD(jint, startApp)(JNIEnv * env, jobject self)
 {
     chip::DeviceLayer::StackLock lock;
-  //  CHIP_ERROR err                           = CHIP_NO_ERROR;
 
- //   err = DeviceLayer::PlatformMgr().InitChipStack();
-    DeviceLayer::PlatformMgr().InitChipStack();
-
-    int argc=0;
-    char * argv[]={0};
-    ChipLinuxAppInit(argc, argv);
+    ChipAndroidAppInit();
 
     if (sIOThread == PTHREAD_NULL)
     {
@@ -108,8 +128,6 @@ JNI_METHOD(jint, entryAppmain)(JNIEnv * env, jobject self)
     return JNI_VERSION_1_6;
 }
 
-
-
 void * IOThreadAppMain(void * arg)
 {
     JNIEnv * env;
@@ -118,7 +136,7 @@ void * IOThreadAppMain(void * arg)
     // Attach the IO thread to the JVM as a daemon thread.
     // This allows the JVM to shutdown without waiting for this thread to exit.
     attachArgs.version = JNI_VERSION_1_6;
-    attachArgs.name    = (char *) "CHIP Device Controller IO Thread";
+    attachArgs.name    = (char *) "CHIP AppServer IO Thread";
     attachArgs.group   = NULL;
 #ifdef __ANDROID__
     sJVM->AttachCurrentThreadAsDaemon(&env, (void *) &attachArgs);
@@ -126,26 +144,64 @@ void * IOThreadAppMain(void * arg)
     sJVM->AttachCurrentThreadAsDaemon((void **) &env, (void *) &attachArgs);
 #endif
 
-    ChipLinuxAppMainLoop();
-    
+    ChipLogProgress(AppServer, "IO thread starting");
+    chip::DeviceLayer::PlatformMgr().RunEventLoop();
+    ChipLogProgress(AppServer, "IO thread ending");
+
     // Detach the thread from the JVM.
     sJVM->DetachCurrentThread();
 
     return NULL;
 }
 
-
-
-
-JNI_METHOD(void, setConfigurationManager)(JNIEnv * env, jclass self, jobject config)
+void ThrowError(JNIEnv * env, CHIP_ERROR errToThrow)
 {
-    chip::DeviceLayer::StackLock lock;
-    chip::DeviceLayer::ConfigurationMgrImpl().InitializeWithObject(config);
+    CHIP_ERROR err = CHIP_NO_ERROR;
+    jthrowable ex;
+
+    err = N2J_Error(env, errToThrow, ex);
+    if (err == CHIP_NO_ERROR)
+    {
+        env->Throw(ex);
+    }
 }
 
-
-JNI_METHOD(void, setQRCodeListener)(JNIEnv * env, jclass self, jobject listener)
+CHIP_ERROR N2J_Error(JNIEnv * env, CHIP_ERROR inErr, jthrowable & outEx)
 {
-    chip::DeviceLayer::StackLock lock;
-    setQRcodeobject(listener);
+    CHIP_ERROR err      = CHIP_NO_ERROR;
+    const char * errStr = NULL;
+    jstring errStrObj   = NULL;
+    jmethodID constructor;
+
+    env->ExceptionClear();
+    constructor = env->GetMethodID(sChipAppServerExceptionCls, "<init>", "(ILjava/lang/String;)V");
+    VerifyOrExit(constructor != NULL, err = CHIP_JNI_ERROR_METHOD_NOT_FOUND);
+
+    switch (inErr.AsInteger())
+    {
+    case CHIP_JNI_ERROR_TYPE_NOT_FOUND.AsInteger():
+        errStr = "CHIP App Server Error: JNI type not found";
+        break;
+    case CHIP_JNI_ERROR_METHOD_NOT_FOUND.AsInteger():
+        errStr = "CHIP App Server Error: JNI method not found";
+        break;
+    case CHIP_JNI_ERROR_FIELD_NOT_FOUND.AsInteger():
+        errStr = "CHIP App Server Error: JNI field not found";
+        break;
+    case CHIP_JNI_ERROR_DEVICE_NOT_FOUND.AsInteger():
+        errStr = "CHIP App Server Error: Device not found";
+        break;
+    default:
+        errStr = ErrorStr(inErr);
+        break;
+    }
+    errStrObj = (errStr != NULL) ? env->NewStringUTF(errStr) : NULL;
+
+    outEx = (jthrowable) env->NewObject(sChipAppServerExceptionCls, constructor, static_cast<jint>(inErr.AsInteger()),
+                                        errStrObj);
+    VerifyOrExit(!env->ExceptionCheck(), err = CHIP_JNI_ERROR_EXCEPTION_THROWN);
+
+exit:
+    env->DeleteLocalRef(errStrObj);
+    return err;
 }
