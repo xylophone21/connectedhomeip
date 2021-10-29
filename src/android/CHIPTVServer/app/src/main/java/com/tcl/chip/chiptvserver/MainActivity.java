@@ -1,7 +1,6 @@
 package com.tcl.chip.chiptvserver;
 
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -23,7 +22,7 @@ import chip.setuppayload.SetupPayloadParser;
 
 public class MainActivity extends AppCompatActivity {
 
-    private ImageView mQrCode;
+    private ImageView mQrCodeImg;
     private TextView mQrCodeTxt;
     private TextView mManualPairingCodeTxt;
 
@@ -31,9 +30,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mQrCode = findViewById(R.id.qrCode);
-        mQrCodeTxt = findViewById(R.id.qrcode_txt);
-        mManualPairingCodeTxt = findViewById(R.id.manualPairingCode_txt);
+        mQrCodeImg = findViewById(R.id.qrCodeImg);
+        mQrCodeTxt = findViewById(R.id.qrCodeTxt);
+        mManualPairingCodeTxt = findViewById(R.id.manualPairingCodeTxt);
         ChipAppServer chipAppServer = new ChipAppServer();
         AndroidChipPlatform chipPlatform = new AndroidChipPlatform(new AndroidBleManager(),
                 new PreferencesKeyValueStoreManager(this),
@@ -59,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
             mQrCodeTxt.setText(qrCode);
 
             Bitmap qrCodeBitmap = QRUtils.createQRCodeBitmap(qrCode, 800, 800);
-            mQrCode.setImageBitmap(qrCodeBitmap);
+            mQrCodeImg.setImageBitmap(qrCodeBitmap);
         } catch (SetupPayloadParser.SetupPayloadException e) {
             e.printStackTrace();
         }
