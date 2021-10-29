@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
             String qrCode = parser.getQrCodeFromPayload(payload);
             mQrCodeTxt.setText(qrCode);
 
-            Bitmap qrCodeBitmap = QRUtils.createQRCodeBitmap(qrCode, 800, 800, "UTF-8", "H", "1", Color.BLACK, Color.WHITE);
+            Bitmap qrCodeBitmap = QRUtils.createQRCodeBitmap(qrCode, 800, 800);
             mQrCode.setImageBitmap(qrCodeBitmap);
         } catch (SetupPayloadParser.SetupPayloadException e) {
             e.printStackTrace();
