@@ -108,7 +108,7 @@ CHIP_ERROR MediaInputManager::GetInputList(app::AttributeValueEncoder & aEncoder
         jobjectArray inputArray = (jobjectArray) env->CallObjectMethod(mMediaInputManagerObject,mGetInputListMethod);
         if (env->ExceptionCheck())
         {
-            ChipLogError(AppServer, "Java exception in MediaInputManager::GetInputList");
+            ChipLogError(Zcl, "Java exception in MediaInputManager::GetInputList");
             env->ExceptionDescribe();
             env->ExceptionClear();
             return CHIP_ERROR_INCORRECT_STATE;
