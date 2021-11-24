@@ -16,6 +16,7 @@ import chip.setuppayload.DiscoveryCapability;
 import chip.setuppayload.SetupPayload;
 import chip.setuppayload.SetupPayloadParser;
 
+import com.tcl.chip.tvapp.ChannelManagerStub;
 import com.tcl.chip.tvapp.ContentLaunchManagerStub;
 import com.tcl.chip.tvapp.KeypadInputManagerStub;
 import com.tcl.chip.tvapp.LowPowerManagerStub;
@@ -46,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
     tvApp.setContentLaunchManager(new ContentLaunchManagerStub());
     tvApp.setLowPowerManager(new LowPowerManagerStub());
     tvApp.setMediaPlaybackManager(new MediaPlaybackManagerStub());
+    tvApp.setTvChannelManager(new ChannelManagerStub());
 
     AndroidChipPlatform chipPlatform =
         new AndroidChipPlatform(
