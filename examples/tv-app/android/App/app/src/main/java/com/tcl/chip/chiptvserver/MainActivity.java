@@ -20,6 +20,7 @@ import com.tcl.chip.tvapp.ContentLaunchManagerStub;
 import com.tcl.chip.tvapp.KeypadInputManagerStub;
 import com.tcl.chip.tvapp.LowPowerManagerStub;
 import com.tcl.chip.tvapp.MediaInputManagerStub;
+import com.tcl.chip.tvapp.MediaPlaybackManagerStub;
 import com.tcl.chip.tvapp.TvApp;
 import com.tcl.chip.tvapp.WakeOnLanManagerStub;
 
@@ -44,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     tvApp.setMediaInputManager(new MediaInputManagerStub());
     tvApp.setContentLaunchManager(new ContentLaunchManagerStub());
     tvApp.setLowPowerManager(new LowPowerManagerStub());
+    tvApp.setMediaPlaybackManager(new MediaPlaybackManagerStub());
 
     AndroidChipPlatform chipPlatform =
         new AndroidChipPlatform(
