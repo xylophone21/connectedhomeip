@@ -84,33 +84,6 @@ void emberAfBasicClusterServerInitCallback(chip::EndpointId endpoint)
 {
     EmberAfStatus status;
 
-    char nodeLabel[DeviceLayer::ConfigurationManager::kMaxNodeLabelLength + 1];
-    if (ConfigurationMgr().GetNodeLabel(nodeLabel, sizeof(nodeLabel)) == CHIP_NO_ERROR)
-    {
-        status = Attributes::NodeLabel::Set(endpoint, chip::CharSpan(nodeLabel, strlen(nodeLabel)));
-        VerifyOrdo(EMBER_ZCL_STATUS_SUCCESS == status, ChipLogError(Zcl, "Error setting Node Label: 0x%02x", status));
-    }
-
-    char location[DeviceLayer::ConfigurationManager::kMaxLocationLength + 1];
-    size_t codeLen = 0;
-    if (ConfigurationMgr().GetCountryCode(location, sizeof(location), codeLen) == CHIP_NO_ERROR)
-    {
-        if (codeLen == 0)
-        {
-            status = Attributes::Location::Set(endpoint, chip::CharSpan("XX", strlen("XX")));
-        }
-        else
-        {
-            status = Attributes::Location::Set(endpoint, chip::CharSpan(location, strlen(location)));
-        }
-        VerifyOrdo(EMBER_ZCL_STATUS_SUCCESS == status, ChipLogError(Zcl, "Error setting Location: 0x%02x", status));
-    }
-    else
-    {
-        status = Attributes::Location::Set(endpoint, chip::CharSpan("XX", strlen("XX")));
-        VerifyOrdo(EMBER_ZCL_STATUS_SUCCESS == status, ChipLogError(Zcl, "Error setting Location: 0x%02x", status));
-    }
-
     char vendorName[DeviceLayer::ConfigurationManager::kMaxVendorNameLength + 1];
     if (ConfigurationMgr().GetVendorName(vendorName, sizeof(vendorName)) == CHIP_NO_ERROR)
     {
